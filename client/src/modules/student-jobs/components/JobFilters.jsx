@@ -4,6 +4,7 @@ import { Search, Filter, Calendar, IndianRupee, X } from "lucide-react";
 import Input from "../../../shared/components/Input";
 import Select from "../../../shared/components/Select";
 
+
 const JobFilters = ({ onFilterChange }) => {
   const [filters, setFilters] = useState({
     designation: "",
@@ -13,6 +14,8 @@ const JobFilters = ({ onFilterChange }) => {
   });
 
   const [debouncedDesignation, setDebouncedDesignation] = useState("");
+  // State for salary range validation message
+  const [salaryError, setSalaryError] = useState("");
 
   // Debounce designation search
   useEffect(() => {
@@ -22,17 +25,35 @@ const JobFilters = ({ onFilterChange }) => {
     return () => clearTimeout(timer);
   }, [filters.designation]);
 
-  // Trigger filter change when filters update
+  // Prevent invalid salary filters from triggering API calls
   useEffect(() => {
+    if(salaryError) return;
+
     onFilterChange({
       ...filters,
       designation: debouncedDesignation,
     });
-  }, [debouncedDesignation, filters.minSalary, filters.maxSalary, filters.postedWithin]);
+  }, [ debouncedDesignation,filters.minSalary,filters.maxSalary, filters.postedWithin, salaryError,]);
 
+
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    const updatedFilters = {
+      ...filters,
+      [name]: value,
+    };
+    setFilters(updatedFilters);
+    // Validate salary range before applying filters
+    const min = Number(updatedFilters.minSalary);
+    const max = Number(updatedFilters.maxSalary);
+
+    if(updatedFilters.minSalary && updatedFilters.maxSalary && min>max) {
+      setSalaryError("Minimum salary cannot be greater than maximum salary");
+    }
+    else {
+      setSalaryError("");
+    }
   };
 
   const handleClear = () => {
@@ -110,6 +131,12 @@ const JobFilters = ({ onFilterChange }) => {
             />
           </div>
         </div>
+
+
+        {/* Salary validation feedback */}
+        {salaryError && (
+          <p className="text-red-400 text-sm mt-2"> {salaryError} </p>
+        )}
 
         {/* Date Posted */}
         <div>
