@@ -1,92 +1,144 @@
 const getApiBaseUrl = () => {
-  const rawBaseUrl = import.meta.env.VITE_API_URL || "";
-  return rawBaseUrl.trim().replace(/\/$/, "");
+  // Optional: override API host in production builds
+  // Example: VITE_API_BASE_URL=https://api.example.com
+  try {
+    return import.meta?.env?.VITE_API_BASE_URL || "";
+  } catch {
+    return "";
+  }
 };
 
-export class ApiError extends Error {
-  constructor(message, status, data, errors = {}) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.data = data;
-    this.errors = errors;
-  }
-}
-
-const parseResponseBody = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  const text = await response.text();
-  return text ? { message: text } : {};
+const toUrl = (path) => {
+  const baseUrl = getApiBaseUrl();
+  if (!baseUrl) return path;
+  if (typeof path !== "string") return path;
+  if (!path.startsWith("/")) return path;
+  return `${baseUrl}${path}`;
 };
 
-/**
- * Normalizes API errors into a frontend-friendly shape
- */
-export const normalizeApiError = (error) => {
-  if (error instanceof ApiError) {
-    return {
-      message: error.message,
-      status: error.status,
-      errors: error.errors || {},
-    };
-  }
+export const apiRequest = async (path, options = {}) => {
+  const { method = "GET", body, token, headers = {}, signal } = options;
 
-  // Network or unexpected errors
-  if (error.name === "TypeError" && error.message.includes("fetch")) {
-    return {
-      message: "Unable to connect. Please check your internet connection and try again.",
-      status: 0,
-      errors: {},
-    };
-  }
+  const url = toUrl(path);
 
-  return {
-    message: error.message || "Something went wrong. Please try again.",
-    status: error.status || 500,
-    errors: {},
-  };
-};
-
-export const apiRequest = async (
-  path,
-  { method = "GET", body, headers = {}, token } = {},
-) => {
   const requestHeaders = {
     Accept: "application/json",
     ...headers,
   };
 
-  const requestConfig = {
-    method,
-    headers: requestHeaders,
-  };
-
-  if (body !== undefined) {
-    if (body instanceof FormData) {
-      requestConfig.body = body;
-    } else {
-      requestHeaders["Content-Type"] = "application/json";
-      requestConfig.body = JSON.stringify(body);
-    }
-  }
-
   if (token) {
     requestHeaders.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, requestConfig);
-  const data = await parseResponseBody(response);
+  const init = {
+    method,
+    headers: requestHeaders,
+    signal,
+  };
 
-  if (!response.ok || data?.success === false) {
-    const message = data?.message || "Something went wrong. Please try again.";
-    const errors = data?.errors || data?.details || {};
-    throw new ApiError(message, response.status, data, errors);
+  if (body !== undefined && body !== null) {
+    if (body instanceof FormData) {
+      init.body = body;
+    } else {
+      requestHeaders["Content-Type"] = "application/json";
+      init.body = JSON.stringify(body);
+    }
   }
 
-  return data;
+  let response;
+  try {
+    response = await fetch(url, init);
+  } catch (cause) {
+    const networkError = new Error("Network error");
+    networkError.status = 0;
+    networkError.cause = cause;
+    networkError.url = url;
+    networkError.method = method;
+    throw networkError;
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+
+  let data = null;
+  if (response.status !== 204) {
+    if (contentType.includes("application/json")) {
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+    } else {
+      try {
+        const text = await response.text();
+        data = text ? { message: text } : null;
+      } catch {
+        data = null;
+      }
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      (data &&
+        typeof data === "object" &&
+        typeof data.message === "string" &&
+        data.message) ||
+      response.statusText ||
+      "Request failed";
+
+    const error = new Error(message);
+    error.status = response.status;
+    error.data = data;
+    error.errors =
+      (data &&
+        typeof data === "object" &&
+        (data.errors || data.error || data.details)) ||
+      undefined;
+    error.url = url;
+    error.method = method;
+    throw error;
+  }
+
+  return data ?? {};
+};
+
+export const normalizeApiError = (error) => {
+  if (!error) {
+    return {
+      status: 500,
+      message: "Something went wrong",
+      errors: {},
+      data: null,
+    };
+  }
+
+  const status =
+    (typeof error.status === "number" && error.status) ||
+    (typeof error.response?.status === "number" && error.response.status) ||
+    500;
+
+  const data = error.data ?? error.response?.data ?? null;
+
+  const message =
+    (data &&
+      typeof data === "object" &&
+      typeof data.message === "string" &&
+      data.message) ||
+    (typeof error.message === "string" && error.message) ||
+    "Something went wrong";
+
+  const errors =
+    (data &&
+      typeof data === "object" &&
+      typeof data.errors === "object" &&
+      data.errors) ||
+    (typeof error.errors === "object" && error.errors) ||
+    {};
+
+  return {
+    status,
+    message,
+    errors,
+    data,
+  };
 };
