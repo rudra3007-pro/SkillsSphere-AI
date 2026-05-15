@@ -12,23 +12,24 @@ const CameraCheck = ({ onStreamReady }) => {
     let analyser;
     let microphone;
     let javascriptNode;
+    let currentStream;
 
     const startCamera = async () => {
       try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
+        currentStream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true,
         });
-        setStream(mediaStream);
+        setStream(currentStream);
         if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
+          videoRef.current.srcObject = currentStream;
         }
         onStreamReady(true);
 
         // Audio Visualizer Logic
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioContext.createAnalyser();
-        microphone = audioContext.createMediaStreamSource(mediaStream);
+        microphone = audioContext.createMediaStreamSource(currentStream);
         javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
         analyser.smoothingTimeConstant = 0.8;
@@ -58,8 +59,8 @@ const CameraCheck = ({ onStreamReady }) => {
     startCamera();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (currentStream) {
+        currentStream.getTracks().forEach((track) => track.stop());
       }
       if (audioContext) {
         audioContext.close();
