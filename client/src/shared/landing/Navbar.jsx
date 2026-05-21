@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Home, FileText, LayoutDashboard, MessageSquare, LogIn, UserPlus, X, Menu, LogOut, User, ChevronDown, Briefcase, Moon, Sun, Sparkles, Rocket, Video } from 'lucide-react';
@@ -13,6 +13,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState(() => {
@@ -20,6 +21,7 @@ const Navbar = () => {
     return window.localStorage.getItem('skillssphere.theme') || 'light';
   });
   const location = useLocation();
+  const navMenuRef = useRef(null);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -40,7 +42,23 @@ const Navbar = () => {
 
   useEffect(() => {
     setIsMenuOpen(false);
+    setIsNavMenuOpen(false);
+    setIsProfileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navMenuRef.current && !navMenuRef.current.contains(event.target)) {
+        setIsNavMenuOpen(false);
+      }
+    };
+
+    if (isNavMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isNavMenuOpen]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -74,6 +92,14 @@ const Navbar = () => {
     ),
   ];
 
+  const homeNavLink = navLinks.find((link) => link.path === '/');
+  const dashboardNavLink = navLinks.find((link) => link.path === '/dashboard');
+  const roadmapNavLink = navLinks.find((link) => link.path === '/roadmap');
+  const visibleNavLinks = [homeNavLink, dashboardNavLink, roadmapNavLink].filter(Boolean);
+  const overflowNavLinks = navLinks.filter(
+    (link) => !visibleNavLinks.some((visibleLink) => visibleLink.path === link.path)
+  );
+
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -85,22 +111,22 @@ const Navbar = () => {
       ${isMenuOpen ? '' : ''}
       max-sm:py-3`}>
 
-      <div className="container flex justify-between items-center px-4 sm:px-3">
+      <div className="container relative flex justify-between items-center px-4 sm:px-3">
         <Link to="/" className="font-heading text-2xl font-extrabold tracking-normal text-[var(--text-main)] z-[1001] flex items-center min-h-[44px] sm:text-xl max-sm:text-lg">
           <span className="text-gradient">SkillSphere</span>&nbsp;AI
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex gap-10 items-center">
-          {navLinks.map((link) => (
+        <div className="hidden lg:flex items-center gap-12 absolute left-1/2 -translate-x-1/2">
+          {visibleNavLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`relative font-medium transition-all duration-300 py-2
-                ${isActive(link.path)
-                  ? 'text-[var(--text-main)] font-semibold'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                }`}
+              className={`relative font-medium transition-all duration-300 py-2 px-1
+              ${isActive(link.path)
+                ? 'text-[var(--text-main)] font-semibold'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+              }`}
             >
               {link.name}
               {isActive(link.path) && (
@@ -108,6 +134,48 @@ const Navbar = () => {
               )}
             </Link>
           ))}
+
+          <div className="relative" ref={navMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsNavMenuOpen((current) => !current)}
+              className="inline-flex items-center gap-1 relative font-medium transition-all duration-300 py-2 px-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+              aria-expanded={isNavMenuOpen}
+              aria-haspopup="menu"
+            >
+              More
+              <ChevronDown size={16} className={`transition-transform duration-200 ${isNavMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isNavMenuOpen && (
+              <div className="absolute left-0 top-full mt-3 w-64 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] z-[1002]">
+                <div className="px-4 py-3 border-b border-[var(--border)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Explore</p>
+                </div>
+                <div className="py-2">
+                  {overflowNavLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setIsNavMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors duration-200 hover:bg-[var(--surface-hover)] ${
+                        isActive(link.path)
+                          ? 'text-[var(--text-main)] bg-[var(--surface-hover)]'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
+                    >
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        isActive(link.path) ? 'bg-[var(--primary)] text-white' : 'bg-[var(--surface-soft)]'
+                      }`}>
+                        {link.icon}
+                      </span>
+                      <span>{link.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="hidden lg:flex gap-5 items-center">
