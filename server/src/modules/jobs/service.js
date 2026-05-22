@@ -77,7 +77,7 @@ export const getAllJobs = async (queryParams = {}) => {
 
   const [jobs, totalCount] = await Promise.all([
     JobPosting.find(filters)
-      .populate("recruiter", "name email company")
+      .populate("recruiter", "name email company companyWebsite")
       .sort("-createdAt")
       .skip(skip)
       .limit(limit),
@@ -98,7 +98,7 @@ export const getAllJobs = async (queryParams = {}) => {
  * @returns {Promise<Object>} - Job details
  */
 export const getJobById = async (id) => {
-  const job = await JobPosting.findById(id).populate("recruiter", "name email company");
+  const job = await JobPosting.findById(id).populate("recruiter", "name email company companyWebsite");
 
   if (!job) {
     throw new AppError("Job not found", 404);
