@@ -78,7 +78,7 @@ export const getAllJobs = async (queryParams = {}) => {
 
   const [jobs, totalCount] = await Promise.all([
     JobPosting.find(filters)
-      .populate("recruiter", "name email company")
+      .populate("recruiter", "name email company companyWebsite")
       .sort("-createdAt")
       .skip(skip)
       .limit(limit),
@@ -99,7 +99,7 @@ export const getAllJobs = async (queryParams = {}) => {
  * @returns {Promise<Object>} - Job details
  */
 export const getJobById = async (id) => {
-  const job = await JobPosting.findById(id).populate("recruiter", "name email company");
+  const job = await JobPosting.findById(id).populate("recruiter", "name email company companyWebsite");
 
   if (!job) {
     throw new AppError("Job not found", 404);
@@ -422,7 +422,7 @@ export const applyToJob = async (jobId, applicantId, options = {}) => {
  * @param {string} recruiterId - ID of the recruiter (for ownership check)
  * @returns {Promise<Array>} - List of applications
  */
-export const getJobApplications = async (jobId, recruiterId) => {
+export const getJobApplications = async (jobId, recruiterId, status) => {
   const job = await JobPosting.findById(jobId);
   if (!job) {
     throw new AppError("Job not found", 404);
@@ -432,7 +432,12 @@ export const getJobApplications = async (jobId, recruiterId) => {
     throw new AppError("You do not have permission to view these applications", 403);
   }
 
-  const applications = await JobApplication.find({ job: jobId })
+  const query = { job: jobId };
+  if (status) {
+    query.status = status;
+  }
+
+  const applications = await JobApplication.find(query)
     .populate("applicant", "name email")
     .populate("resume", "fileName")
     .sort({ createdAt: -1 });

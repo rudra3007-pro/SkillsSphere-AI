@@ -6,6 +6,7 @@ import {
   createClassroomSession,
   getTutorClassroomSessions,
   endClassroomSession,
+  getActiveClassroomSessions,
 } from "../services/classroomService";
 
 export default function ClassroomsDashboard() {
@@ -24,8 +25,12 @@ export default function ClassroomsDashboard() {
   const isTutor = user?.role === "tutor";
 
   useEffect(() => {
-    if (isTutor && token) {
-      fetchMySessions();
+    if (token) {
+      if (isTutor) {
+        fetchMySessions();
+      } else {
+        fetchActiveSessions();
+      }
     }
   }, [isTutor, token]);
 
@@ -40,6 +45,22 @@ export default function ClassroomsDashboard() {
     } catch (err) {
       console.error("Failed to load sessions", err);
       setError("Failed to load your classroom sessions. Please try again.");
+    } finally {
+      setIsListLoading(false);
+    }
+  };
+
+  const fetchActiveSessions = async () => {
+    try {
+      setIsListLoading(true);
+      setError(null);
+      const res = await getActiveClassroomSessions(token);
+      if (res.success && res.data) {
+        setSessions(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to load active sessions", err);
+      setError("Failed to load active classrooms. Please try again.");
     } finally {
       setIsListLoading(false);
     }
@@ -342,54 +363,140 @@ export default function ClassroomsDashboard() {
                 )}
               </div>
             ) : (
-              // Student View: Premium Guidelines Context
-              <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-8 shadow-xl space-y-6">
-                <h3 className="text-xl font-bold border-b border-slate-800 pb-3">How to Join a Live Session</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-bold font-mono text-sm flex-shrink-0">
-                      1
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-200">Get the Room ID</h4>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Ask your tutor for the unique, secure session UUID. They can copy this directly from their dashboard.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-bold font-mono text-sm flex-shrink-0">
-                      2
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-200">Connect Your Hardware</h4>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Make sure your camera, microphone, and speakers are fully connected. The classroom utilizes standard WebRTC protocols.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-bold font-mono text-sm flex-shrink-0">
-                      3
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-200">Enter & Learn</h4>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Once inside, you can engage via real-time HD audio, chat messages, hand-raising, and screen-sharing widgets.
-                      </p>
-                    </div>
-                  </div>
+              // Student View: Active Sessions List
+              <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-xl min-h-[400px] flex flex-col">
+                <div className="flex justify-between items-center mb-6 border-b border-slate-800/80 pb-4">
+                  <h3 className="text-xl font-bold flex items-center space-x-2">
+                    <span>Active Live Classrooms</span>
+                    <span className="bg-indigo-500/10 text-indigo-400 text-xs px-2.5 py-0.5 rounded-full border border-indigo-500/20 font-mono animate-[pulse_2s_infinite]">
+                      {sessions.length}
+                    </span>
+                  </h3>
+                  <button 
+                    onClick={fetchActiveSessions}
+                    disabled={isListLoading}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                  >
+                    Refresh List
+                  </button>
                 </div>
 
-                <div className="bg-indigo-500/5 border border-indigo-500/10 text-indigo-300 p-4 rounded-xl text-xs leading-relaxed flex items-start space-x-3">
-                  <Clock size={16} className="mt-0.5 flex-shrink-0 text-indigo-400" />
-                  <span>
-                    Note: Live rooms are ephemeral and close when the host terminates the session. Make sure your tutor has already initialized the room before you try to join.
-                  </span>
-                </div>
+                {isListLoading ? (
+                  <div className="flex-grow flex flex-col items-center justify-center text-slate-500 py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-3"></div>
+                    <p className="text-sm">Scanning for active learning rooms...</p>
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="flex-grow flex flex-col space-y-6">
+                    <div className="flex flex-col items-center justify-center text-slate-500 py-6 text-center">
+                      <BookOpen size={48} className="text-slate-700 mb-4" />
+                      <p className="font-semibold text-slate-400">No active classrooms right now</p>
+                      <p className="text-xs text-slate-600 max-w-xs mt-1">
+                        Tutors haven't started any public classes yet. Check out the guidelines below on how to join a custom room.
+                      </p>
+                    </div>
+                    
+                    {/* Fallback guidelines */}
+                    <div className="border-t border-slate-800/60 pt-6 space-y-4">
+                      <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider">How to Join a Session</h4>
+                      
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-bold font-mono text-xs flex-shrink-0">
+                            1
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-semibold text-slate-200">Get the Room ID</h5>
+                            <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                              Ask your tutor for the unique, secure session UUID. They can copy this directly from their dashboard.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-bold font-mono text-xs flex-shrink-0">
+                            2
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-semibold text-slate-200">Paste & Connect</h5>
+                            <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                              Enter the UUID in the input form on the left, then click "Join Classroom" to connect your camera/mic.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
+                    {sessions.map((session) => (
+                      <div 
+                        key={session.roomId}
+                        className="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-xl p-4 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group hover:shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                      >
+                        <div className="space-y-2 max-w-[70%] text-left">
+                          <div className="flex items-center space-x-2">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <h4 className="font-semibold text-slate-200 truncate">{session.title}</h4>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-mono">
+                            {session.subject && (
+                              <span className="flex items-center space-x-1">
+                                <BookOpen size={12} className="text-slate-600" />
+                                <span>{session.subject}</span>
+                              </span>
+                            )}
+                            <span className="flex items-center space-x-1">
+                              <Users size={12} className="text-slate-600" />
+                              <span>Max {session.maxParticipants} students</span>
+                            </span>
+                          </div>
+
+                          {/* Host/Tutor details */}
+                          {session.host && (
+                            <div className="flex items-center space-x-2 pt-1">
+                              {session.host.profilePic ? (
+                                <img 
+                                  src={session.host.profilePic} 
+                                  alt={session.host.name} 
+                                  className="w-5 h-5 rounded-full object-cover border border-slate-800"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.host.name)}`;
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold border border-indigo-500/10">
+                                  {session.host.name?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="text-xs text-slate-400">
+                                Hosted by <span className="text-slate-300 font-medium">{session.host.name}</span>
+                              </span>
+                              <span className="text-[9px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.2 rounded uppercase tracking-wider font-semibold font-mono scale-90 origin-left">
+                                Tutor
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-2 self-end sm:self-auto flex-shrink-0">
+                          <button
+                            onClick={() => navigate(`/classrooms/${session.roomId}`)}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-[0_2px_10px_rgba(99,102,241,0.2)] hover:shadow-[0_4px_15px_rgba(99,102,241,0.3)] transition-all flex items-center space-x-1 active:scale-[0.97]"
+                          >
+                            <span>Enter Room</span>
+                            <ArrowRight size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

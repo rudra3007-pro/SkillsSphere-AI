@@ -196,9 +196,12 @@ export const deleteJobPosting = async (id, token) => {
  * @param {string} token - Auth bearer token
  * @returns {Promise<{success: boolean, applications: Array}>}
  */
-export const getJobApplications = async (jobId, token) => {
+export const getJobApplications = async (jobId, token, status = "") => {
   try {
-    const response = await apiRequest(`/api/jobs/${jobId}/applications`, { token });
+    const url = status 
+      ? `/api/jobs/${jobId}/applications?status=${encodeURIComponent(status)}`
+      : `/api/jobs/${jobId}/applications`;
+    const response = await apiRequest(url, { token });
     return {
       success: true,
       applications: response.applications || [],

@@ -5,10 +5,24 @@ import { Home, FileText, LayoutDashboard, MessageSquare, LogIn, UserPlus, X, Men
 import Button from './Button';
 import { logout } from '../../features/auth/authSlice';
 import { getProtectedAssetUrl } from '../../utils/protectedAssetUrl';
+import { getSignedFileUrl } from '../../services/fileService';
 
 const Navbar = () => {
   const { isAuthenticated, user, token } = useSelector((state) => state.auth);
-  const avatarSrc = user?.profilePic ? getProtectedAssetUrl(user.profilePic, token) : null;
+  const [avatarSrc, setAvatarSrc] = useState(null);
+
+  useEffect(() => {
+    if (user?.profilePic) {
+      const baseUrl = getProtectedAssetUrl(user.profilePic);
+      if (baseUrl && token) {
+        getSignedFileUrl(user.profilePic, token).then(setAvatarSrc).catch(() => setAvatarSrc(baseUrl));
+      } else if (baseUrl) {
+        setAvatarSrc(baseUrl);
+      }
+    } else {
+      setAvatarSrc(null);
+    }
+  }, [user?.profilePic, token]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
@@ -82,7 +96,8 @@ const Navbar = () => {
           { name: 'Job Match', path: '/job-matcher', icon: <Sparkles size={20} /> },
           { name: 'Resume Analyzer', path: '/resume-analyzer', icon: <FileText size={20} /> },
           { name: 'Cover Letters', path: '/cover-letters', icon: <FileText size={20} /> },
-          { name: 'Roadmap', path: '/roadmap', icon: <Rocket size={20} /> }
+          { name: 'Roadmap', path: '/roadmap', icon: <Rocket size={20} /> },
+          { name: 'Live Classrooms', path: '/classrooms', icon: <Video size={20} /> }
         ]
     ),
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
