@@ -156,6 +156,11 @@ export const assignTutorResource = asyncHandler(async (req, res) => {
     throw new AppError("studentId, topicId, title, url, and type are required", 400);
   }
 
+  const trimmedUrl = url.trim();
+  if (!/^https?:\/\//i.test(trimmedUrl)) {
+    throw new AppError("Invalid URL: Must start with http:// or https://", 400);
+  }
+
   if (!["video", "article", "documentation"].includes(type)) {
     throw new AppError("Invalid resource type", 400);
   }
