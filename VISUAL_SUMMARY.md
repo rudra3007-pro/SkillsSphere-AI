@@ -2,7 +2,7 @@
 
 ## What You're Getting
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  NOTIFICATION CENTER FEATURE - FULLY IMPLEMENTED & READY   │
 ├─────────────────────────────────────────────────────────────┤
@@ -31,7 +31,8 @@
 │  ✅ PRODUCTION-READY CODE                                   │
 │                                                               │
 └─────────────────────────────────────────────────────────────┘
-```
+
+```text
 
 ---
 
@@ -55,11 +56,12 @@
 ```bash
 npm run dev:all
 # or cd client && npm run dev
-```
+
+```text
 
 ### Step 2: Log In
 
-- Navigate to http://localhost:3000
+- Navigate to <http://localhost:3000>
 - Log in with your credentials
 
 ### Step 3: See the Bell
@@ -74,16 +76,17 @@ npm run dev:all
 
 ### In Navbar (Desktop)
 
-```
+```text
 [Logo] [Nav Links] [Bell 🔔] [Theme] [User Menu]
                       ↑
                   Unread: 5
                   (pulsing)
+
 ```
 
 ### Bell Dropdown (On Click)
 
-```
+```text
 ┌─────────────────────────────┐
 │ Notifications        [5]     │  ← Unread count
 │ [Mark all] [Clear]          │  ← Quick actions
@@ -102,11 +105,13 @@ npm run dev:all
 │                             │
 │ → View all notifications    │  ← Link to page
 └─────────────────────────────┘
-```
+
+```text
 
 ### Full Page (/notifications)
 
 ```
+
 ┌──────────────────────────────────┐
 │ Notifications                     │
 │ You have 5 unread                │
@@ -126,7 +131,8 @@ npm run dev:all
 │ (10 notifications shown)          │
 │ [Load More]                      │
 └──────────────────────────────────┘
-```
+
+```text
 
 ---
 
@@ -165,18 +171,20 @@ npm run dev:all
 
 ### Notification Bell Icon
 
-```
+```text
 🔔 Icon
  └─ Shows only for logged-in users
  └─ Red badge with count (99+ max)
  └─ Pulsing animation
  └─ Hover effect
  └─ Click to toggle dropdown
-```
+
+```text
 
 ### Dropdown Panel
 
 ```
+
 Dropdown Panel
  ├─ Header with unread count
  ├─ Quick action buttons
@@ -190,11 +198,13 @@ Dropdown Panel
  ├─ Loading state (skeleton)
  ├─ Empty state
  └─ "View all" link
-```
+
+```text
 
 ### Full Notifications Page
 
 ```
+
 Full Page View
  ├─ Page header with stats
  ├─ Toolbar
@@ -210,7 +220,8 @@ Full Page View
  │   │   └─ Actions
  │   └─ Pagination controls
  └─ States: Loading, Empty, Error, Data
-```
+
+```text
 
 ---
 
@@ -229,7 +240,7 @@ Full Page View
 
 ## 🔄 Data Flow Diagram
 
-```
+```text
 ┌─────────────────────┐
 │   Backend Service   │
 └──────────┬──────────┘
@@ -265,7 +276,8 @@ Full Page View
     │  - Dropdown     │
     │  - Full Page    │
     └─────────────────┘
-```
+
+```text
 
 ---
 
@@ -431,7 +443,7 @@ Full Page View
 
 ---
 
-## 🚀 What's Next?
+## 🚀 What's Next
 
 ### Immediate Use
 
@@ -456,7 +468,7 @@ Full Page View
 
 ---
 
-## 📞 Need Help?
+## 📞 Need Help
 
 ### Quick Questions
 
@@ -542,7 +554,7 @@ Beyond the requirements:
 
 ---
 
-## 🎉 You're All Set!
+## 🎉 You're All Set
 
 The Notification Center is:
 

@@ -28,7 +28,7 @@ A **complete, production-ready Notification Center** for SkillsSphere-AI with:
 
 ### 1. **useNotifications Hook**
 
-```
+```text
 client/src/modules/notifications/hooks/useNotifications.js
 ```
 
@@ -38,7 +38,7 @@ client/src/modules/notifications/hooks/useNotifications.js
 
 ### 2. **NotificationCard Component**
 
-```
+```text
 client/src/modules/notifications/components/NotificationCard.jsx
 ```
 
@@ -50,7 +50,7 @@ client/src/modules/notifications/components/NotificationCard.jsx
 
 ### 3. **NotificationDropdown Component**
 
-```
+```text
 client/src/modules/notifications/components/NotificationDropdown.jsx
 ```
 
@@ -63,7 +63,7 @@ client/src/modules/notifications/components/NotificationDropdown.jsx
 
 ### 4. **NotificationBell Component**
 
-```
+```text
 client/src/modules/notifications/components/NotificationBell.jsx
 ```
 
@@ -74,7 +74,7 @@ client/src/modules/notifications/components/NotificationBell.jsx
 
 ### 5. **NotificationsPage Component**
 
-```
+```text
 client/src/modules/notifications/pages/NotificationsPage.jsx
 ```
 
@@ -90,7 +90,7 @@ client/src/modules/notifications/pages/NotificationsPage.jsx
 
 ### 1. **Navbar.jsx**
 
-```
+```text
 client/src/shared/landing_components/Navbar.jsx
 ```
 
@@ -100,7 +100,7 @@ client/src/shared/landing_components/Navbar.jsx
 
 ### 2. **App.jsx**
 
-```
+```text
 client/src/app/App.jsx
 ```
 
@@ -110,7 +110,7 @@ client/src/app/App.jsx
 
 ### 3. **notificationsSlice.js**
 
-```
+```text
 client/src/features/notifications/notificationsSlice.js
 ```
 
@@ -132,7 +132,7 @@ npm run dev:all  # At root to start all services
 
 ### Step 2: Login to Application
 
-- Navigate to http://localhost:3000
+- Navigate to <http://localhost:3000>
 - Log in with your credentials
 - You'll see the notification bell in navbar
 
@@ -203,7 +203,7 @@ Real-time updates via SocketNotificationListener:
 
 Uses existing backend endpoints:
 
-```
+```http
 GET  /api/notifications
 GET  /api/notifications/unread-count
 PATCH /api/notifications/:id/read
@@ -216,7 +216,7 @@ DELETE /api/notifications
 
 New protected route added:
 
-```
+```text
 /notifications → NotificationsPage
 ```
 
@@ -499,4 +499,4 @@ The Notification Center feature is now complete and ready to enhance the SkillsS
 
 For any questions or issues, refer to the comprehensive documentation files provided.
 
-**Happy coding! 🚀**
+Happy coding! 🚀

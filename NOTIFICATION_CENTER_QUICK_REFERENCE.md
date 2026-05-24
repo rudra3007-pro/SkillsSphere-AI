@@ -2,7 +2,7 @@
 
 ## 📍 File Locations
 
-```
+```text
 client/src/modules/notifications/
 ├── hooks/
 │   └── useNotifications.js

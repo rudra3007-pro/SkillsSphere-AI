@@ -97,27 +97,6 @@ const RecruiterApplicantsPage = () => {
   const [activePreset, setActivePreset] = useState('');
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 
-  const handleExportCSV = () => {
-    setIsExportDropdownOpen(false);
-    if (!applicants || applicants.length === 0) return;
-
-    const data = applicants.map(app => ({
-      "Name": app.applicant?.name || "Anonymous",
-      "Email": app.applicant?.email || "N/A",
-      "Status": app.status,
-      "Applied On": new Date(app.createdAt).toLocaleDateString(),
-      "AI Match Score": app.aiMatchScore ? `${app.aiMatchScore}%` : "N/A",
-      "Match Category": app.matchCategory || "N/A",
-      "ATS Compatibility": app.matchBreakdown?.atsCompatibility ? `${app.matchBreakdown.atsCompatibility}%` : "N/A",
-      "Skill Match": app.matchBreakdown?.skillMatch ? `${app.matchBreakdown.skillMatch}%` : "N/A",
-      "Project Strength": app.matchBreakdown?.projectStrength ? `${app.matchBreakdown.projectStrength}%` : "N/A",
-      "Contribution Activity": app.matchBreakdown?.contributionActivity || "N/A",
-      "Career Readiness": app.matchBreakdown?.careerReadiness || "N/A",
-    }));
-
-    exportToCSV(`Candidates_${job?.title?.replace(/[^a-z0-9]/gi, '_') || 'Job'}.csv`, data);
-  };
-
   const handleExportPDF = () => {
     setIsExportDropdownOpen(false);
     exportToPDF("applicants-container", `Candidate_List_${job?.title?.replace(/[^a-z0-9]/gi, '_') || 'Job'}.pdf`);

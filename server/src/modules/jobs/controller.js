@@ -19,6 +19,32 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { invalidateCacheByPrefix } from "../../utils/cacheHelpers.js";
 
 /**
+ * Sanitizes a string to prevent CSV Injection (Formula Injection).
+ * If the string starts with a dangerous character (=, +, -, @, \t, \r),
+ * it prepends a single quote to force the spreadsheet application to treat it as text.
+ * It also escapes double quotes and wraps the result in quotes.
+ * 
+ * @param {string} str - The string to sanitize
+ * @returns {string} The sanitized, quote-wrapped string ready for CSV insertion
+ */
+const sanitizeCSVField = (str) => {
+  if (typeof str !== "string") str = String(str || "");
+  
+  // Clean newlines
+  let cleaned = str.replace(/\r?\n|\r/g, " ");
+
+  // Escape double quotes
+  cleaned = cleaned.replace(/"/g, '""');
+
+  // Prevent formula injection by neutralizing dangerous starting characters
+  if (/^[=+\-@\t\r]/.test(cleaned)) {
+    cleaned = "'" + cleaned;
+  }
+
+  return `"${cleaned}"`;
+};
+
+/**
  * @desc    Create a new job posting
  * @route   POST /api/recruiter/jobs
  * @access  Private (Recruiters only)
@@ -287,7 +313,7 @@ export const exportApplicationsToCSV = asyncHandler(async (req, res) => {
     "Cover Note"
   ];
 
-  // Convert applications to CSV rows
+    // Convert applications to CSV rows
   const rows = applications.map(app => {
     const candidateName = app.applicant?.name || "N/A";
     const candidateEmail = app.applicant?.email || "N/A";
@@ -296,21 +322,17 @@ export const exportApplicationsToCSV = asyncHandler(async (req, res) => {
     const appStatus = app.status || "pending";
     const applyDate = new Date(app.createdAt).toLocaleDateString();
     const resumeLink = app.resumeLink || "N/A";
-    
-    // Clean cover note (escape quotes and remove newlines)
-    const coverNoteClean = (app.coverNote || "")
-      .replace(/"/g, '""')
-      .replace(/\r?\n|\r/g, " ");
+    const coverNote = app.coverNote || "";
 
     return [
-      `"${candidateName.replace(/"/g, '""')}"`,
-      `"${candidateEmail.replace(/"/g, '""')}"`,
-      `"${matchScore}"`,
-      `"${matchCategory}"`,
-      `"${appStatus}"`,
-      `"${applyDate}"`,
-      `"${resumeLink.replace(/"/g, '""')}"`,
-      `"${coverNoteClean}"`
+      sanitizeCSVField(candidateName),
+      sanitizeCSVField(candidateEmail),
+      sanitizeCSVField(matchScore),
+      sanitizeCSVField(matchCategory),
+      sanitizeCSVField(appStatus),
+      sanitizeCSVField(applyDate),
+      sanitizeCSVField(resumeLink),
+      sanitizeCSVField(coverNote)
     ].join(",");
   });
 
