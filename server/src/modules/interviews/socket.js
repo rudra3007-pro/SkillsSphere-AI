@@ -159,5 +159,13 @@ export function initInterviewSockets(io) {
         });
       }
     });
+
+    socket.on("rehydrate-interview", (payload) => {
+      if (!socket.data || socket.data.sessionId !== payload.sessionId) return;
+      socket.to(payload.sessionId).emit("participant-rehydrated", {
+        user: socket.data.user,
+        currentIndex: payload.currentIndex
+      });
+    });
   });
 }

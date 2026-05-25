@@ -9,6 +9,11 @@ import ObserverPanel from "../components/ObserverPanel";
 import RealtimeSentimentIndicator from "../components/RealtimeSentimentIndicator";
 import { analyzeText, debounce } from "../utils/sentiment";
 import {
+  saveInterviewSession,
+  loadInterviewSession,
+  clearInterviewSession
+} from "../../../utils/interviewSessionStorage";
+import {
   Send,
   CheckCircle,
   Clock,
@@ -51,6 +56,10 @@ const InterviewSession = () => {
     }, 500)
   ).current;
 
+  const messageQueue = useRef([]);
+  const wasConnected = useRef(false);
+  const [recoveryMessage, setRecoveryMessage] = useState(null);
+
   // Socket & Multi-role state
   const [socket, setSocket] = useState(null);
   const [participants, setParticipants] = useState([]);
@@ -82,17 +91,36 @@ const InterviewSession = () => {
         const data = res.data;
         setSession(data);
 
-        // Find the first unanswered question
-        const unansweredIdx = data.answers.findIndex(
-          (a) => !a.transcript && !a.scores,
-        );
-        const idx = unansweredIdx >= 0 ? unansweredIdx : 0;
+        let idx = 0;
+        const savedSession = loadInterviewSession();
+        if (savedSession && savedSession.sessionId === sessionId) {
+           idx = savedSession.currentIndex;
+           if (savedSession.messages && savedSession.messages.length > 0) {
+              const lastMsg = savedSession.messages[savedSession.messages.length - 1];
+              if (lastMsg.role === "candidate") {
+                setAnswer(lastMsg.content);
+              }
+           }
+        } else {
+          // Find the first unanswered question
+          const unansweredIdx = data.answers.findIndex(
+            (a) => !a.transcript && !a.scores,
+          );
+          idx = unansweredIdx >= 0 ? unansweredIdx : 0;
+        }
+
         setCurrentIndex(idx);
         setCurrentQuestion({
           questionText: data.answers[idx]?.questionText,
           questionId: data.answers[idx]?.questionId,
         });
         setIsLastQuestion(idx === data.answers.length - 1);
+        
+        saveInterviewSession({
+          sessionId,
+          currentIndex: idx,
+          messages: [],
+        });
       } catch (err) {
         setError("Failed to load interview session.");
         console.error("[InterviewSession] Error:", err);
@@ -110,11 +138,41 @@ const InterviewSession = () => {
     
     // In production, VITE_API_URL should be used. Using standard URL for now.
     const socketUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    const newSocket = io(socketUrl, { auth: { token } });
+    const newSocket = io(socketUrl, { 
+      auth: { token },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000
+    });
 
     newSocket.on("connect", () => {
       setSocketStatus("connected");
       newSocket.emit("join-interview", { sessionId });
+      
+      if (wasConnected.current) {
+        const savedSession = loadInterviewSession();
+        if (savedSession && savedSession.sessionId === sessionId) {
+          newSocket.emit("rehydrate-interview", {
+            sessionId,
+            currentIndex: savedSession.currentIndex,
+            previousMessages: savedSession.messages,
+            activeTopic: session?.topic,
+            lastAiResponse: session?.answers?.[savedSession.currentIndex]?.questionText
+          });
+          setRecoveryMessage("Reconnected interview session");
+          setTimeout(() => setRecoveryMessage(null), 3000);
+          
+          if (messageQueue.current.length > 0) {
+            messageQueue.current.forEach(msg => newSocket.emit("submit-answer", msg));
+            messageQueue.current = [];
+          }
+        } else {
+          setRecoveryMessage("Session expired. Starting a new interview.");
+          setTimeout(() => setRecoveryMessage(null), 3000);
+        }
+      }
+      wasConnected.current = true;
     });
 
     newSocket.on("disconnect", () => {
@@ -159,7 +217,17 @@ const InterviewSession = () => {
 
     setSocket(newSocket);
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        if (newSocket && newSocket.disconnected) {
+          newSocket.connect();
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       newSocket.close();
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.stop();
@@ -199,16 +267,22 @@ const InterviewSession = () => {
 
     if (socket && socketStatus === "connected") {
       socket.emit("submit-answer", { sessionId, transcript: answer.trim(), audioBuffer: null });
-      return;
-    }
-
-    try {
-      const res = await submitAnswer(sessionId, answer.trim());
-      handleEvaluationResult(res.data);
-    } catch (err) {
-      setError(err.message || "Failed to submit answer.");
-      console.error("[InterviewSession] Submit error:", err);
+    } else if (socket && (socketStatus === "disconnected" || socketStatus === "reconnecting")) {
+      messageQueue.current.push({ sessionId, transcript: answer.trim(), audioBuffer: null });
+      setRecoveryMessage("Connection lost. Message queued until reconnected.");
+      setTimeout(() => setRecoveryMessage(null), 3000);
+      setAnswer("");
       setSubmitting(false);
+      return;
+    } else {
+      try {
+        const res = await submitAnswer(sessionId, answer.trim());
+        handleEvaluationResult(res.data);
+      } catch (err) {
+        setError(err.message || "Failed to submit answer.");
+        console.error("[InterviewSession] Submit error:", err);
+        setSubmitting(false);
+      }
     }
   };
 
@@ -218,6 +292,7 @@ const InterviewSession = () => {
 
     try {
       await completeInterview(sessionId);
+      clearInterviewSession();
       navigate(`/mock-interview/${sessionId}/results`, { replace: true });
     } catch (err) {
       setError(err.message || "Failed to complete interview.");
@@ -236,6 +311,13 @@ const InterviewSession = () => {
   const handleAnswerChange = (e) => {
     setAnswer(e.target.value);
     debouncedAnalyze(e.target.value);
+    
+    saveInterviewSession({
+      sessionId,
+      currentIndex,
+      messages: [{ role: "candidate", content: e.target.value, timestamp: Date.now() }],
+    });
+
     if (socket && !isObserver) {
       socket.emit("interview-typing", { sessionId, text: e.target.value });
     }
@@ -333,7 +415,12 @@ const InterviewSession = () => {
           <Clock size={16} />
           {formatTime(elapsedTime)}
         </div>
-        <div className="flex items-center gap-2 py-2 px-4 bg-black/20 rounded-full text-xs font-semibold">
+        <div className="flex items-center gap-2 py-2 px-4 bg-black/20 rounded-full text-xs font-semibold relative">
+          {recoveryMessage && (
+            <div className="absolute top-10 right-0 z-50 bg-indigo-600/90 text-white text-xs py-2 px-4 rounded shadow-lg whitespace-nowrap backdrop-blur">
+              {recoveryMessage}
+            </div>
+          )}
           <span className={`w-2 h-2 rounded-full animate-pulse ${
             socketStatus === "connected" ? "bg-emerald-500" :
             socketStatus === "disconnected" ? "bg-red-500" :
