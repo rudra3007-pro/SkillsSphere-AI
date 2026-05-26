@@ -8,6 +8,7 @@ import InterviewSessionSkeleton from "../components/InterviewSessionSkeleton";
 import ObserverPanel from "../components/ObserverPanel";
 import RealtimeSentimentIndicator from "../components/RealtimeSentimentIndicator";
 import { analyzeText, debounce } from "../utils/sentiment";
+import Navbar from "../../../shared/landing/Navbar";
 import {
   saveInterviewSession,
   loadInterviewSession,
@@ -26,6 +27,11 @@ import {
   Brain,
   Mic,
   MicOff,
+  Activity,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Info
 } from "lucide-react";
 
 const TOKEN_KEY = "skillssphere.auth.token";
@@ -102,7 +108,6 @@ const InterviewSession = () => {
               }
            }
         } else {
-          // Find the first unanswered question
           const unansweredIdx = data.answers.findIndex(
             (a) => !a.transcript && !a.scores,
           );
@@ -136,7 +141,6 @@ const InterviewSession = () => {
     if (!session || !user) return;
     const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     
-    // In production, VITE_API_URL should be used. Using standard URL for now.
     const socketUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
     const newSocket = io(socketUrl, { 
       auth: { token },
@@ -160,16 +164,13 @@ const InterviewSession = () => {
             activeTopic: session?.topic,
             lastAiResponse: session?.answers?.[savedSession.currentIndex]?.questionText
           });
-          setRecoveryMessage("Reconnected interview session");
+          setRecoveryMessage("Reconnected");
           setTimeout(() => setRecoveryMessage(null), 3000);
           
           if (messageQueue.current.length > 0) {
             messageQueue.current.forEach(msg => newSocket.emit("submit-answer", msg));
             messageQueue.current = [];
           }
-        } else {
-          setRecoveryMessage("Session expired. Starting a new interview.");
-          setTimeout(() => setRecoveryMessage(null), 3000);
         }
       }
       wasConnected.current = true;
@@ -277,7 +278,7 @@ const InterviewSession = () => {
       socket.emit("submit-answer", { sessionId, transcript: answer.trim(), audioBuffer: null });
     } else if (socket && (socketStatus === "disconnected" || socketStatus === "reconnecting")) {
       messageQueue.current.push({ sessionId, transcript: answer.trim(), audioBuffer: null });
-      setRecoveryMessage("Connection lost. Message queued until reconnected.");
+      setRecoveryMessage("Offline: Queued");
       setTimeout(() => setRecoveryMessage(null), 3000);
       setAnswer("");
       setSubmitting(false);
@@ -353,7 +354,7 @@ const InterviewSession = () => {
         }
       };
 
-      mediaRecorder.start(1000); // send chunks every 1 second
+      mediaRecorder.start(1000);
       setIsRecording(true);
     } catch (err) {
       console.error("Error accessing microphone:", err);
@@ -373,21 +374,30 @@ const InterviewSession = () => {
   };
 
   if (loading) {
-    return <InterviewSessionSkeleton />;
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617]">
+        <Navbar />
+        <InterviewSessionSkeleton />
+      </div>
+    );
   }
 
   if (error && !session) {
     return (
-      <div className="max-w-[900px] mx-auto p-8 min-h-[calc(100vh-80px)] flex flex-col gap-6">
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-400">
-          <AlertCircle size={48} />
-          <p>{error}</p>
-          <button
-            className="bg-indigo-500/15 text-indigo-300 border-none py-3 px-6 rounded-xl font-semibold cursor-pointer"
-            onClick={() => navigate("/mock-interview")}
-          >
-            Back to Lobby
-          </button>
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-10 rounded-3xl flex flex-col items-center max-w-md text-center shadow-xl">
+            <AlertCircle size={56} className="text-red-500 mb-6" />
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Session Error</h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-8">{error}</p>
+            <button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-blue-500/25"
+              onClick={() => navigate("/mock-interview")}
+            >
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -396,195 +406,221 @@ const InterviewSession = () => {
   const totalQuestions = session?.totalQuestions || 0;
 
   return (
-    <div className="flex h-screen bg-[#020617] text-white overflow-hidden p-6">
-      <div className="flex-1 max-w-4xl mx-auto flex flex-col h-full bg-slate-900/50 border border-slate-800 rounded-3xl p-8 relative overflow-hidden shadow-2xl">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between gap-4 py-4 px-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl flex-wrap dark:bg-gray-900/70">
-        <div className="flex gap-2 items-center">
-          <span className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white py-1 px-3 rounded-full text-xs font-bold tracking-wider uppercase">{session?.topic?.toUpperCase()}</span>
-          <span className="bg-indigo-500/15 text-indigo-300 py-1 px-3 rounded-full text-xs font-semibold capitalize">{session?.difficulty}</span>
-        </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col font-sans transition-colors duration-300">
+      <Navbar />
 
-        <div className="flex-1 min-w-[200px] flex flex-col gap-1">
-          <div className="text-xs text-slate-400 text-center">
-            Question {currentIndex + 1} of {totalQuestions}
-          </div>
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
-              style={{
-                width: `${((currentIndex + 1) / totalQuestions) * 100}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 font-mono text-base text-slate-400 font-semibold">
-          <Clock size={16} />
-          {formatTime(elapsedTime)}
-        </div>
-        <div className="flex items-center gap-2 py-2 px-4 bg-black/20 rounded-full text-xs font-semibold relative">
-          {recoveryMessage && (
-            <div className="absolute top-10 right-0 z-50 bg-indigo-600/90 text-white text-xs py-2 px-4 rounded shadow-lg whitespace-nowrap backdrop-blur">
-              {recoveryMessage}
-            </div>
-          )}
-          <span className={`w-2 h-2 rounded-full animate-pulse ${
-            socketStatus === "connected" ? "bg-emerald-500" :
-            socketStatus === "disconnected" ? "bg-red-500" :
-            socketStatus === "reconnecting" ? "bg-amber-500" :
-            "bg-slate-400"
-          }`} />
-          <span className="text-slate-400">
-            {socketStatus === "connected" && "Connected"}
-            {socketStatus === "disconnected" && "Disconnected"}
-            {socketStatus === "reconnecting" && "Reconnecting"}
-            {socketStatus === "connecting" && "Connecting..."}
-          </span>
-        </div>
-      </div>
-
-      {/* Question Area */}
-      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-10 text-center dark:bg-gray-900/70 mt-6">
-        <div className="text-sm font-bold text-indigo-400 mb-3 tracking-[0.1em]">Q{currentIndex + 1}</div>
-        <h2 className="text-2xl font-bold leading-snug text-slate-100">
-          {currentQuestion?.questionText || "Loading question..."}
-        </h2>
-      </div>
-
-      {!showScores && !isObserver && (
-        <RealtimeSentimentIndicator analysis={analysis} />
-      )}
-
-      {/* Score Flash */}
-      {showScores && lastScores && (
-        <div className="flex gap-4 justify-center mt-6">
-          <div className="flex-1 max-w-[200px] bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-2 dark:bg-gray-900/70">
-            <Brain size={18} />
-            <span className="text-xs text-slate-400">Technical</span>
-            <strong className="text-2xl font-extrabold bg-gradient-to-br from-indigo-500 to-purple-500 bg-clip-text text-transparent">{lastScores.technical}%</strong>
-          </div>
-          <div className="flex-1 max-w-[200px] bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-2 dark:bg-gray-900/70">
-            <MessageSquare size={18} />
-            <span className="text-xs text-slate-400">Communication</span>
-            <strong className="text-2xl font-extrabold bg-gradient-to-br from-indigo-500 to-purple-500 bg-clip-text text-transparent">{lastScores.communication}%</strong>
-          </div>
-          <div className="flex-1 max-w-[200px] bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-2 dark:bg-gray-900/70">
-            <Target size={18} />
-            <span className="text-xs text-slate-400">Relevance</span>
-            <strong className="text-2xl font-extrabold bg-gradient-to-br from-indigo-500 to-purple-500 bg-clip-text text-transparent">{lastScores.relevance}%</strong>
-          </div>
-        </div>
-      )}
-
-      {/* Answer Input / Observer View */}
-      {!showScores && (
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 dark:bg-gray-900/70 mt-4">
-          {isObserver ? (
-            <div className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl p-6 h-48 overflow-y-auto">
-              <span className="text-[10px] uppercase font-black tracking-widest text-emerald-500 mb-2 block flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Candidate Typing Live...
-              </span>
-              <p className="text-sm text-slate-300 font-mono whitespace-pre-wrap">
-                {liveTyping || <span className="text-slate-600 italic">Waiting for candidate to start typing...</span>}
-              </p>
-            </div>
-          ) : (
-            <textarea
-              ref={textareaRef}
-              className="w-full bg-transparent border border-white/15 rounded-xl p-4 text-slate-100 text-base leading-relaxed resize-y min-h-[140px] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 placeholder:text-slate-500"
-              placeholder="Type your answer here... (Ctrl+Enter to submit)"
-              value={answer}
-              onChange={handleAnswerChange}
-              onKeyDown={handleKeyDown}
-              disabled={submitting}
-              rows={6}
-            />
-          )}
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 mt-24 sm:mt-28 flex flex-col lg:flex-row gap-8 items-start">
+        
+        {/* LEFT COLUMN: Telemetry & Status */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6">
           
-          <div className="flex items-center justify-between mt-4 gap-4 flex-wrap">
-            <span className="text-xs text-slate-500">
-              {isObserver ? liveTyping.trim().split(/\s+/).filter(Boolean).length : answer.trim().split(/\s+/).filter(Boolean).length} words
-            </span>
+          {/* Status Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col gap-6">
+            <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-5">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                <Activity className="text-blue-600 dark:text-blue-400" size={28} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">{session?.topic}</h3>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 mt-1 inline-block uppercase tracking-wider">
+                  {session?.difficulty}
+                </span>
+              </div>
+            </div>
 
-            {error && (
-              <span className="text-xs text-red-400 flex items-center gap-1">
-                <AlertCircle size={14} /> {error}
-              </span>
-            )}
-
-            <button
-              className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white border-none py-3 px-6 rounded-xl font-semibold cursor-pointer flex items-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSubmitAnswer}
-              disabled={!answer.trim() || submitting || isObserver}
-              style={{ display: isObserver ? 'none' : 'flex' }}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={16} /> Evaluating...
-                </>
-              ) : (
-                <>
-                  <Send size={16} /> Submit Answer
-                </>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">Session Time</span>
+                <div className="flex items-center gap-2 font-mono text-lg font-bold text-slate-900 dark:text-white">
+                  <Clock size={16} className="text-slate-400" />
+                  {formatTime(elapsedTime)}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">Connection</span>
+                <div className="flex items-center gap-2">
+                  {socketStatus === "connected" ? <Wifi size={16} className="text-emerald-500" /> : <WifiOff size={16} className="text-red-500" />}
+                  <span className={`text-sm font-bold capitalize ${socketStatus === "connected" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {socketStatus}
+                  </span>
+                </div>
+              </div>
+              {recoveryMessage && (
+                <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 p-2 rounded-lg flex items-center gap-2">
+                  <RefreshCw size={14} className="animate-spin" /> {recoveryMessage}
+                </div>
               )}
-            </button>
-            <button
-              className={`btn-record flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
-                isRecording ? "bg-red-500/20 text-red-500 hover:bg-red-500/30" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-              }`}
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={submitting || isObserver}
-              style={{ display: isObserver ? 'none' : 'flex' }}
-            >
-              {isRecording ? (
-                <>
-                  <MicOff size={16} /> Stop
-                </>
-              ) : (
-                <>
-                  <Mic size={16} /> Record
-                </>
-              )}
-            </button>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Complete / Next */}
-      {showScores && isLastQuestion && (
-        <div className="text-center flex flex-col items-center gap-4 mt-8">
-          <p className="text-emerald-500 font-semibold flex items-center gap-2">
-            <CheckCircle size={20} /> All questions answered!
-          </p>
-          <button
-            className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-none py-4 px-8 rounded-full text-lg font-bold cursor-pointer flex items-center gap-2 transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={handleComplete}
-            disabled={completing}
-          >
-            {completing ? (
-              <>
-                <Loader2 className="animate-spin" size={16} /> Calculating
-                Results...
-              </>
-            ) : (
-              <>
-                <Trophy size={16} /> View Results
-              </>
-            )}
-          </button>
-        </div>
-      )}
+          {/* Progress Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col gap-4">
+            <div className="flex justify-between items-end mb-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Interview Progress</h3>
+              <span className="text-sm font-bold text-blue-600 dark:text-blue-400 font-mono">
+                {currentIndex + 1} / {totalQuestions}
+              </span>
+            </div>
+            <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+              <div
+                className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-500"
+                style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+              <Info size={14} /> Answer all questions to see final analytics.
+            </p>
+          </div>
 
-      {showScores && !isLastQuestion && (
-        <div className="text-center text-slate-400 flex items-center justify-center gap-2 mt-8">
-          <Loader2 className="animate-spin" size={16} />
-          Loading next question...
         </div>
-      )}
-      </div>
 
-      {/* Observer Panel (Only visible if observer) */}
+        {/* RIGHT COLUMN: Interaction Zone */}
+        <div className="flex-1 w-full flex flex-col gap-6">
+          
+          {/* Question Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-10 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col">
+            <div className="inline-flex self-start items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold tracking-wide uppercase mb-6">
+              Question {currentIndex + 1}
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold leading-relaxed text-slate-900 dark:text-white tracking-tight">
+              {currentQuestion?.questionText || "Loading question..."}
+            </h2>
+          </div>
+
+          {!showScores && !isObserver && (
+            <div className="w-full">
+              <RealtimeSentimentIndicator analysis={analysis} />
+            </div>
+          )}
+
+          {/* Score Flash */}
+          {showScores && lastScores && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-[fadeInUp_0.4s_ease-out]">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col items-center text-center shadow-sm hover:border-blue-500/30 transition-colors">
+                <Brain size={24} className="text-blue-500 mb-3" />
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Technical</span>
+                <strong className="text-3xl font-black text-slate-900 dark:text-white">{lastScores.technical}%</strong>
+              </div>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col items-center text-center shadow-sm hover:border-emerald-500/30 transition-colors">
+                <MessageSquare size={24} className="text-emerald-500 mb-3" />
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Communication</span>
+                <strong className="text-3xl font-black text-slate-900 dark:text-white">{lastScores.communication}%</strong>
+              </div>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col items-center text-center shadow-sm hover:border-amber-500/30 transition-colors">
+                <Target size={24} className="text-amber-500 mb-3" />
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Relevance</span>
+                <strong className="text-3xl font-black text-slate-900 dark:text-white">{lastScores.relevance}%</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Answer Input */}
+          {!showScores && (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col">
+              
+              {isObserver ? (
+                <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 h-56 overflow-y-auto">
+                  <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-500 mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Candidate Typing
+                  </span>
+                  <p className="text-base text-slate-700 dark:text-slate-300 font-mono leading-relaxed whitespace-pre-wrap">
+                    {liveTyping || <span className="text-slate-400 italic">Waiting for input...</span>}
+                  </p>
+                </div>
+              ) : (
+                <textarea
+                  ref={textareaRef}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 rounded-2xl p-6 text-slate-900 dark:text-slate-100 text-lg leading-relaxed resize-y min-h-[180px] focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all shadow-inner"
+                  placeholder="Type your answer here... (Ctrl+Enter to submit)"
+                  value={answer}
+                  onChange={handleAnswerChange}
+                  onKeyDown={handleKeyDown}
+                  disabled={submitting}
+                  rows={5}
+                />
+              )}
+              
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+                
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    {isObserver ? liveTyping.trim().split(/\s+/).filter(Boolean).length : answer.trim().split(/\s+/).filter(Boolean).length} words
+                  </span>
+                  {error && (
+                    <span className="text-sm font-semibold text-red-500 flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 px-3 py-1 rounded-lg">
+                      <AlertCircle size={16} /> {error}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                  {!isObserver && (
+                    <button
+                      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all ${
+                        isRecording 
+                          ? "bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 animate-[pulse_1.5s_ease-in-out_infinite]" 
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-white/5"
+                      }`}
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={submitting}
+                    >
+                      {isRecording ? <><MicOff size={18} /> Stop</> : <><Mic size={18} /> Record</>}
+                    </button>
+                  )}
+
+                  {!isObserver && (
+                    <button
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5"
+                      onClick={handleSubmitAnswer}
+                      disabled={!answer.trim() || submitting}
+                    >
+                      {submitting ? (
+                        <><Loader2 className="animate-spin" size={18} /> Evaluating</>
+                      ) : (
+                        <><Send size={18} /> Submit</>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Completion State */}
+          {showScores && isLastQuestion && (
+            <div className="mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-3xl p-8 flex flex-col items-center gap-6 text-center shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle size={32} className="text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Interview Complete!</h3>
+                <p className="text-slate-600 dark:text-slate-400">All questions have been evaluated successfully.</p>
+              </div>
+              <button
+                className="w-full sm:w-auto bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 border-none py-3.5 px-8 rounded-xl font-bold cursor-pointer flex justify-center items-center gap-2 transition-all shadow-lg hover:-translate-y-0.5 disabled:opacity-50"
+                onClick={handleComplete}
+                disabled={completing}
+              >
+                {completing ? (
+                  <><Loader2 className="animate-spin" size={18} /> Saving Results...</>
+                ) : (
+                  <><Trophy size={18} /> View Detailed Analytics</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {showScores && !isLastQuestion && (
+            <div className="mt-4 p-4 flex items-center justify-center gap-3 text-slate-500 dark:text-slate-400 font-medium">
+              <Loader2 className="animate-spin text-blue-500" size={18} />
+              Loading next question...
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Observer Panel */}
       {isObserver && (
         <ObserverPanel 
           participants={participants} 
