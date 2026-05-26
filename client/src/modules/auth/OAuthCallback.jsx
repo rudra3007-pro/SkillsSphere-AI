@@ -51,7 +51,10 @@ const OAuthCallback = () => {
 
         dispatch(setOAuthData({ token, user, rememberMe: true }));
         success(`Welcome ${user.name}!`);
-        navigate('/dashboard', { replace: true });
+        const fallbackPath = '/dashboard';
+        const redirectTo = sessionStorage.getItem('oauth_redirect') || fallbackPath;
+        sessionStorage.removeItem('oauth_redirect');
+        navigate(redirectTo, { replace: true });
       } catch (err) {
         console.error(err);
         showError('Could not complete login. Please try again.');

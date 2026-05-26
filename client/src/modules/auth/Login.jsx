@@ -161,6 +161,9 @@ const Login = () => {
             <button
               type="button"  //prevents from validation,so that the toast notification doesnt show up when we click on the continue with google button
               onClick={() => {
+                if (location.state?.from?.pathname) {
+                  sessionStorage.setItem('oauth_redirect', location.state.from.pathname);
+                }
                 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                 const redirect = encodeURIComponent(`${window.location.origin}/auth/callback`);
                 window.location.href = `${API_URL}/api/auth/google?redirect=${redirect}`;
