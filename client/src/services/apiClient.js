@@ -74,6 +74,10 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+
     const message =
       (data &&
         typeof data === "object" &&

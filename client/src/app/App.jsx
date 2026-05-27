@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCurrentUser } from "../features/auth/authSlice";
+import { fetchCurrentUser, logoutUser } from "../features/auth/authSlice";
 import ChatWidget from "../modules/ai-assistant/components/ChatWidget";
 import LandingPage from "../modules/landing/LandingPage";
 import DashboardPage from "../modules/dashboard/DashboardPage";
@@ -46,6 +46,18 @@ function App() {
       dispatch(fetchCurrentUser());
     }
   }, [dispatch, token]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      dispatch(logoutUser());
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text-main)] transition-colors duration-300">
