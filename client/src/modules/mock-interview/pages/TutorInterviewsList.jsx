@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Clock, CheckCircle, Video, ArrowRight, User } from "lucide-react";
+import { Clock, CheckCircle, Video, ArrowRight, User, ArrowLeft } from "lucide-react";
 import { apiRequest } from "../../../services/apiClient.js";
 import Navbar from "../../../shared/landing/Navbar";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
@@ -43,6 +43,13 @@ const TutorInterviewsList = () => {
       
       <div className="max-w-6xl mx-auto space-y-8">
         <div>
+          <Link 
+            to="/dashboard" 
+            className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-500 mb-4 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </Link>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Student Mock Interviews</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">Review completed AI mock interviews and provide manual feedback.</p>
         </div>

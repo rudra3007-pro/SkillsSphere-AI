@@ -323,6 +323,12 @@ const InterviewResults = () => {
         >
           <ArrowLeft size={16} /> View History
         </button>
+        <button
+          className="bg-white/5 text-indigo-300 border border-indigo-500/30 py-3 px-8 rounded-full font-bold cursor-pointer flex items-center gap-2 hover:bg-indigo-500/10"
+          onClick={() => navigate("/dashboard")}
+        >
+          Back to Dashboard
+        </button>
       </div>
     </div>
   );

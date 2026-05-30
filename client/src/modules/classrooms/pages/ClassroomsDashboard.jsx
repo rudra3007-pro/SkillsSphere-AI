@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Video, Users, ArrowRight, MonitorPlay, Calendar, BookOpen, Clock, Power, ShieldAlert } from "lucide-react";
+import { Video, Users, ArrowRight, MonitorPlay, Calendar, BookOpen, Clock, Power, ShieldAlert, ArrowLeft } from "lucide-react";
 import {
   createClassroomSession,
   getTutorClassroomSessions,
@@ -139,6 +139,15 @@ export default function ClassroomsDashboard() {
         
         {/* Header section */}
         <div className="text-center mb-12">
+          <div className="mb-6">
+            <Link 
+              to="/dashboard" 
+              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-400 transition-colors"
+            >
+              <ArrowLeft size={16} />
+              Back to Dashboard
+            </Link>
+          </div>
           <div className="inline-flex items-center justify-center p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl mb-6 border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.15)] animate-[pulse_3s_infinite]">
             <MonitorPlay size={32} />
           </div>

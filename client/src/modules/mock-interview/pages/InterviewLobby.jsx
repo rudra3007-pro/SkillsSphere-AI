@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../../../shared/landing/Navbar";
 import CameraCheck from "../components/CameraCheck";
 import PersonaSelector from "../components/PersonaSelector";
 import Button from "../../../shared/components/Button";
 import Select from "../../../shared/components/Select";
-import { Play, GraduationCap, History, Loader2, Sparkles, Zap, ChevronRight } from "lucide-react";
+import { Play, GraduationCap, History, Loader2, Sparkles, Zap, ChevronRight, ArrowLeft } from "lucide-react";
 import { getTopics, startSession } from "../services/interviewService";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
@@ -83,6 +83,15 @@ const InterviewLobby = () => {
         
         {/* Header Section */}
         <header className="text-center mb-2 animate-[fadeIn_0.8s_ease-out]">
+          <div className="mb-6">
+            <Link 
+              to="/dashboard" 
+              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-400 transition-colors"
+            >
+              <ArrowLeft size={16} />
+              Back to Dashboard
+            </Link>
+          </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6">
             <Sparkles size={14} /> Cognitive Evaluation Engine
           </div>

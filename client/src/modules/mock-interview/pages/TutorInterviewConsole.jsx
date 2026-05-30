@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { PlayCircle, PauseCircle, Save, ArrowLeft, MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
 import { apiRequest } from "../../../services/apiClient.js";
@@ -127,9 +127,9 @@ const TutorInterviewConsole = () => {
         
         <div className="flex items-center justify-between">
           <div>
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-indigo-600 mb-2">
-              <ArrowLeft size={16} /> Back
-            </button>
+            <Link to="/tutor/interviews" className="flex items-center gap-2 text-indigo-600 mb-2 hover:text-indigo-500 transition-colors">
+              <ArrowLeft size={16} /> Back to Interviews
+            </Link>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Interview Player Console</h1>
             <p className="text-slate-500">Evaluating {session.userId.name || 'Unknown User'}'s mock interview on {session.topic}</p>
           </div>

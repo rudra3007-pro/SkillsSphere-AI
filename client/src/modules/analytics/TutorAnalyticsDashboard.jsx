@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Treemap } from "recharts";
-import { TrendingUp, Users, AlertCircle } from "lucide-react";
+import { TrendingUp, Users, AlertCircle, ArrowLeft } from "lucide-react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { apiRequest } from "../../services/apiClient.js";
 import Navbar from "../../shared/landing/Navbar";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
@@ -95,6 +96,13 @@ const TutorAnalyticsDashboard = () => {
         
         {/* Header Section */}
         <div>
+          <Link 
+            to="/dashboard" 
+            className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-500 mb-4 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </Link>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Tutor Analytics Dashboard</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">Class-wide skill gaps and candidate proficiencies.</p>
         </div>

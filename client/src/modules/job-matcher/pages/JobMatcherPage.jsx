@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { Sparkles, FileUp, AlertCircle, Briefcase } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Sparkles, FileUp, AlertCircle, Briefcase, ArrowLeft } from "lucide-react";
 import Navbar from "../../../shared/landing/Navbar";
 import LoadingState from "../../../shared/components/LoadingState";
 import { JobViewerCard, Pagination } from "../../../shared/components";
@@ -88,6 +88,13 @@ export default function JobMatcherPage() {
       <div className="container mx-auto px-4 pb-12 flex-1">
         {/* Header */}
         <div className="mb-16 text-center max-w-3xl mx-auto">
+          <Link 
+            to="/dashboard" 
+            className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-400 mb-6 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </Link>
           <h1 className="text-5xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
             <span className="text-gradient">Smart Job</span> Matching
           </h1>

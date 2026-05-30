@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { 
   Award, BookOpen, CheckCircle2, Plus, Target, ExternalLink, Video, FileText, Globe, User, ArrowLeft, ArrowRight, MessageSquare
 } from "lucide-react";
@@ -143,6 +144,13 @@ export default function TutorRoadmapLobby() {
       <div className="max-w-7xl mx-auto pt-32 pb-20 px-4">
         {/* Header */}
         <div className="mb-12 animate-slide-up">
+          <Link 
+            to="/dashboard" 
+            className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 mb-6 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </Link>
           <div className="flex items-center gap-2 mb-2">
             <div className="p-1.5 bg-indigo-500/20 rounded-md">
               <BookOpen className="w-4 h-4 text-indigo-400" />

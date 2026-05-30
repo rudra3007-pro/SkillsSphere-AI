@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   useToast,
   LoadingState,
@@ -19,7 +20,7 @@ import {
   deleteResume,
 } from "../services/resumeService";
 import { syncRoadmap } from "../../roadmap/services/roadmapService";
-import { FileText, Sparkles, RefreshCw, Clock, Check, X, Edit2, Trash2, CheckCircle2 } from "lucide-react";
+import { FileText, Sparkles, RefreshCw, Clock, Check, X, Edit2, Trash2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import ConfirmDialog from "../../../shared/components/ConfirmDialog";
 
@@ -327,6 +328,13 @@ const ResumeAnalyzerPage = () => {
       <Navbar />
 
       <div className="max-w-4xl mx-auto pt-32 pb-12 px-4 sm:px-6 lg:px-8 space-y-8 animate-slide-up">
+        <Link 
+          to="/dashboard" 
+          className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-400 -mb-4 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
+        </Link>
         <PageHeader
           title={
             <>

@@ -415,6 +415,19 @@ const InterviewSession = () => {
         
         {/* LEFT COLUMN: Telemetry & Status */}
         <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          <div className="flex justify-start">
+            <button
+              onClick={() => {
+                if (window.confirm("Are you sure you want to exit? Your progress may be lost.")) {
+                  navigate("/dashboard");
+                }
+              }}
+              className="inline-flex items-center gap-2 text-sm text-red-500 hover:text-red-400 transition-colors"
+            >
+              <AlertCircle size={16} />
+              Exit Session
+            </button>
+          </div>
           
           {/* Status Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col gap-6">

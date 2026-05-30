@@ -82,6 +82,7 @@ const createMockStore = (token = 'test-token') => {
   })
 }
 
+import { ToastProvider } from '../../../../shared/components/toast/ToastProvider';
 import { ToastProvider } from '../../../../shared/components/toast/ToastProvider'
 
 const renderWithProviders = (component, { store = createMockStore() } = {}) => {
