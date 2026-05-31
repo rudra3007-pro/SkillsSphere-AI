@@ -6,6 +6,8 @@ import { LogOut, Menu, User, FileText, Target, Briefcase, Video, BadgeCheck, Spa
 import { logout } from "../../features/auth/authSlice";
 import Button from "../../shared/components/Button";
 import Navbar from "../../shared/landing/Navbar";
+import Footer from "../../modules/landing/components/Footer";
+
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 import StudentDashboard from "./components/dashboards/StudentDashboard";
@@ -184,6 +186,7 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+          <Footer />
     </main>
   );
 };

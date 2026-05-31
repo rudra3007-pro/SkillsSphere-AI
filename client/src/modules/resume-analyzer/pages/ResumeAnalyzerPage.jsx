@@ -7,6 +7,8 @@ import {
   PageHeader,
 } from "../../../shared/components";
 import Navbar from "../../../shared/landing/Navbar";
+import Footer from "../../../modules/landing/components/Footer";
+
 import AnalysisResult from "../components/AnalysisResult";
 import DragDropUpload from "../components/DragDropUpload";
 import JobDescriptionInput from "../components/JobDescriptionInput";
@@ -327,7 +329,7 @@ const ResumeAnalyzerPage = () => {
     <div className="min-h-screen bg-white dark:bg-dark-bg text-gray-900 dark:text-text-main font-sans pt-24">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto pt-32 pb-12 px-4 sm:px-6 lg:px-8 space-y-8 animate-slide-up">
+      <div className="max-w-4xl mx-auto pt-8 pb-12 px-4 sm:px-6 lg:px-8 space-y-8 animate-slide-up">
         <Link 
           to="/dashboard" 
           className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-400 -mb-4 transition-colors"
@@ -502,6 +504,7 @@ const ResumeAnalyzerPage = () => {
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteModal(false)}
       />
+          <Footer />
     </div>
   );
 };

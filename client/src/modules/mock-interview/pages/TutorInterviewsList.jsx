@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import { Clock, CheckCircle, Video, ArrowRight, User, ArrowLeft } from "lucide-react";
 import { apiRequest } from "../../../services/apiClient.js";
 import Navbar from "../../../shared/landing/Navbar";
+import Footer from "../../../modules/landing/components/Footer";
+
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
 
@@ -123,6 +125,7 @@ const TutorInterviewsList = () => {
           )}
         </div>
       </div>
+          <Footer />
     </div>
   );
 };

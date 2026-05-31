@@ -9,6 +9,8 @@ import {
   getActiveClassroomSessions,
 } from "../services/classroomService";
 import Navbar from "../../../shared/landing/Navbar";
+import Footer from "../../../modules/landing/components/Footer";
+
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
 export default function ClassroomsDashboard() {
@@ -518,6 +520,7 @@ export default function ClassroomsDashboard() {
         </div>
 
       </div>
+          <Footer />
     </div>
   );
 }

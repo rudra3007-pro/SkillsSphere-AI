@@ -5,6 +5,8 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { apiRequest } from "../../services/apiClient.js";
 import Navbar from "../../shared/landing/Navbar";
+import Footer from "../../modules/landing/components/Footer";
+
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 
@@ -170,6 +172,7 @@ const TutorAnalyticsDashboard = () => {
 
         </div>
       </div>
+          <Footer />
     </div>
   );
 };

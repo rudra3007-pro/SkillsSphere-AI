@@ -43,6 +43,8 @@ import {
   Radar
 } from "recharts";
 import Navbar from "../../../shared/landing/Navbar";
+import Footer from "../../../modules/landing/components/Footer";
+
 import LoadingState from "../../../shared/components/LoadingState";
 import ErrorState from "../../../shared/components/ErrorState";
 import { getRecruiterAnalytics } from "../services/jobPostingService";
@@ -918,6 +920,7 @@ const RecruiterAnalyticsPage = () => {
 
         </div>
       </div>
+          <Footer />
     </main>
   );
 };

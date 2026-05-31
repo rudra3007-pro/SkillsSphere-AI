@@ -27,6 +27,8 @@ import {
   Code
 } from 'lucide-react';
 import Navbar from '../../../shared/landing/Navbar';
+import Footer from "../../../modules/landing/components/Footer";
+
 import { Button, LoadingState, ErrorState, EmptyState } from '../../../shared/components';
 import { getRecruiterJobs } from '../services/jobPostingService';
 import { searchTalent, matchCandidate, inviteCandidate } from '../services/talentFinderService';
@@ -743,6 +745,7 @@ const TalentFinderPage = () => {
           </div>
         </div>
       </div>
+          <Footer />
     </main>
   );
 };

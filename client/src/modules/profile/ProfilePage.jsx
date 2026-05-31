@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Navbar from "../../shared/landing/Navbar";
+import Footer from "../../modules/landing/components/Footer";
+
 import { Link } from "react-router-dom";
 import ProfileSkeleton from "./components/ProfileSkeleton";
 import {
@@ -686,6 +688,7 @@ const ProfilePage = () => {
           loading={isDeleting} 
         />
       )}
+          <Footer />
     </div> /* Closes Root Background Container */
   );
 };

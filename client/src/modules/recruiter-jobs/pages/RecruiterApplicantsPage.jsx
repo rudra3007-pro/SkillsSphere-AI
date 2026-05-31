@@ -20,10 +20,15 @@ import {
   Code,
   ChevronDown,
   Download,
-  AlertTriangle
+  AlertTriangle,
+  LayoutList,
+  KanbanSquare
 } from 'lucide-react';
 import Navbar from '../../../shared/landing/Navbar';
+import Footer from "../../../modules/landing/components/Footer";
+
 import { Button, LoadingState, ErrorState, EmptyState, StatusUpdateModal, StatusTimeline } from '../../../shared/components';
+import ApplicantsKanbanBoard from '../components/ApplicantsKanbanBoard';
 import { getJobApplications, updateApplicationStatus, getJobPostingById, exportJobApplicationsCSV } from '../services/jobPostingService';
 import { exportToCSV, exportToPDF } from '../../../utils/exportUtils';
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
@@ -114,6 +119,7 @@ const RecruiterApplicantsPage = () => {
   const [selectedApp, setSelectedApp] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // "list" | "board"
   
   // Filtering and Sorting States
   const [statusFilter, setStatusFilter] = useState('');
@@ -553,23 +559,51 @@ const RecruiterApplicantsPage = () => {
           <div className="lg:col-span-3 space-y-6">
             
             {/* Sort & Quick Meta */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-slate-900/20 border border-gray-200 dark:border-white/5 rounded-2xl p-4">
-              <div className="text-sm font-semibold text-gray-600 dark:text-slate-300">
-                Showing {applicants.length} applicant{applicants.length !== 1 ? 's' : ''}
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-slate-900/20 border border-gray-200 dark:border-white/5 rounded-2xl p-4">
+                <div className="text-sm font-semibold text-gray-600 dark:text-slate-300">
+                  Showing {applicants.length} applicant{applicants.length !== 1 ? 's' : ''}
+                </div>
+                
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  {/* View Mode Toggle */}
+                  <div className="flex bg-gray-100 dark:bg-slate-950/40 border border-gray-200 dark:border-white/5 rounded-xl p-1">
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                        viewMode === "list" 
+                          ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm" 
+                          : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <LayoutList size={14} /> List
+                    </button>
+                    <button
+                      onClick={() => setViewMode("board")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                        viewMode === "board" 
+                          ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm" 
+                          : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <KanbanSquare size={14} /> Board
+                    </button>
+                  </div>
+
+                  {/* Sort Control */}
+                  <div className="flex items-center gap-2 shrink-0 bg-gray-100 dark:bg-slate-950/40 border border-gray-200 dark:border-white/5 rounded-xl px-3 py-1.5 ml-auto sm:ml-0">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">Sort:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="bg-transparent text-xs font-bold text-gray-900 dark:text-white outline-none cursor-pointer pr-4 border-none ring-0 appearance-none"
+                    >
+                      <option value="matchScore" className="bg-white dark:bg-slate-900">AI Match Score</option>
+                      <option value="newest" className="bg-white dark:bg-slate-900">Newest Applied</option>
+                      <option value="oldest" className="bg-white dark:bg-slate-900">Oldest Applied</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 bg-gray-100 dark:bg-slate-950/40 border border-gray-200 dark:border-white/5 rounded-xl px-3 py-1.5">
-                <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent text-xs font-bold text-gray-900 dark:text-white outline-none cursor-pointer pr-4 border-none ring-0 appearance-none"
-                >
-                  <option value="matchScore" className="bg-white dark:bg-slate-900">AI Match Score</option>
-                  <option value="newest" className="bg-white dark:bg-slate-900">Newest Applied</option>
-                  <option value="oldest" className="bg-white dark:bg-slate-900">Oldest Applied</option>
-                </select>
-              </div>
-            </div>
 
             {/* List Content */}
             {loading ? (
@@ -597,6 +631,24 @@ const RecruiterApplicantsPage = () => {
                   </Button>
                 )}
               </EmptyState>
+            ) : viewMode === "board" ? (
+              <ApplicantsKanbanBoard 
+                applications={applicants} 
+                onStatusChange={async (appId, newStatus) => {
+                  try {
+                    await updateApplicationStatus(appId, newStatus, `Moved to ${newStatus} via Kanban board`, token);
+                    toast.success(`Applicant moved to ${newStatus}`);
+                    fetchData();
+                  } catch (err) {
+                    toast.error("Failed to move applicant");
+                    fetchData(); // refresh to revert optimistic update
+                  }
+                }}
+                onAppClick={(app) => {
+                  setSelectedApp(app);
+                  setIsModalOpen(true);
+                }}
+              />
             ) : (
               <div id="applicants-container" className="grid grid-cols-1 gap-4">
                 {applicants.map((app, index) => {
@@ -903,6 +955,7 @@ const RecruiterApplicantsPage = () => {
         currentStatus={selectedApp?.status}
         onUpdate={handleUpdateStatus}
       />
+          <Footer />
     </main>
   );
 };

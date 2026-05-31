@@ -24,10 +24,8 @@ router.post("/", createNotification);
 
 router.get("/:id", getNotification);
 
-router.patch("/:id/read", markAsRead);
-
 router.patch("/mark-all/read", markAllAsRead);
-
+router.patch("/:id/read", markAsRead);
 router.delete("/:id", deleteNotificationById);
 
 router.delete("/", deleteAllNotificationsForUser);

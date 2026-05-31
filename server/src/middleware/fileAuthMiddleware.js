@@ -43,7 +43,7 @@ export const protectFileAccess = asyncHandler(async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded.jti && isTokenBlacklisted(decoded.jti)) {
+    if (decoded.jti && await isTokenBlacklisted(decoded.jti)) {
       return next(new AppError("Token has been revoked. Please log in again.", 401));
     }
 

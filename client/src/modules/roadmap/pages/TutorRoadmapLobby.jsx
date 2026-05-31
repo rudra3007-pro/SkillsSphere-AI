@@ -5,6 +5,8 @@ import {
   Award, BookOpen, CheckCircle2, Plus, Target, ExternalLink, Video, FileText, Globe, User, ArrowLeft, ArrowRight, MessageSquare
 } from "lucide-react";
 import Navbar from "../../../shared/landing/Navbar";
+import Footer from "../../../modules/landing/components/Footer";
+
 import { 
   getStudentsRoadmaps, getStudentRoadmap, assignTutorResource, verifyTopic, addTutorMilestone 
 } from "../services/roadmapService";
@@ -516,6 +518,7 @@ export default function TutorRoadmapLobby() {
           currentUser={user}
         />
       )}
+          <Footer />
     </div>
   );
 }

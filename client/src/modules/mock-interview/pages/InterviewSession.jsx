@@ -10,6 +10,8 @@ import ObserverPanel from "../components/ObserverPanel";
 import RealtimeSentimentIndicator from "../components/RealtimeSentimentIndicator";
 import { analyzeText, debounce } from "../utils/sentiment";
 import Navbar from "../../../shared/landing/Navbar";
+import Footer from "../../../modules/landing/components/Footer";
+
 import {
   saveInterviewSession,
   loadInterviewSession,
@@ -649,6 +651,7 @@ const InterviewSession = () => {
           isConductor={true} 
         />
       )}
+          <Footer />
     </div>
   );
 };
