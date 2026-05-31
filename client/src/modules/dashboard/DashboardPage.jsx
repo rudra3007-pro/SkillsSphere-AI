@@ -187,7 +187,8 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
-          <Footer />
+      </div>
+      <Footer />
     </main>
   );
 };
