@@ -48,6 +48,8 @@ import ProtectedRoute from "../shared/components/ProtectedRoute";
 import SocketNotificationListener from "../shared/components/SocketNotificationListener";
 import ScrollToTop from "../shared/components/ScrollToTop";
 import { LoadingState } from "../shared/components";
+import CommandPalette from "../shared/components/CommandPalette";
+
 function App() {
   const dispatch = useDispatch();
   const { token } = useSelector((state) => state.auth);
@@ -74,6 +76,7 @@ function App() {
     <div className="min-h-screen bg-[var(--background)] text-[var(--text-main)] transition-colors duration-300">
       <ScrollToTop />
       <SocketNotificationListener />
+      <CommandPalette />
 
       <Suspense fallback={<LoadingState title="Loading module..." />}>
       <Routes>
