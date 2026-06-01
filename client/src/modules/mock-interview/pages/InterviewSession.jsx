@@ -696,9 +696,16 @@ const InterviewSession = () => {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">{session?.topic}</h3>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 mt-1 inline-block uppercase tracking-wider">
-                  {session?.difficulty}
-                </span>
+                <div className="flex gap-2 mt-1">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 inline-block uppercase tracking-wider">
+                    {session?.difficulty}
+                  </span>
+                  {session?.persona && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 inline-block uppercase tracking-wider">
+                      {session.persona}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
