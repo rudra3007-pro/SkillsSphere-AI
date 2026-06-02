@@ -10,7 +10,7 @@ vi.mock("../../services/interviewService", () => ({
   getHistory: vi.fn(),
 }));
 
-vi.mock("../../../../shared/landing/Navbar", () => ({
+vi.mock("../../../../shared/components/Navbar", () => ({
   default: () => <nav data-testid="navbar">Navbar</nav>,
 }));
 

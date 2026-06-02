@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { parseResume } from "../../utils/parseResume.js";
+import logger from "../../utils/logger.js";
 import Resume from "../../database/models/Resume.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import AppError from "../../utils/AppError.js";
@@ -100,8 +101,8 @@ export const uploadResume = asyncHandler(async (req, res, next) => {
   }
 
   const count = await Resume.countDocuments({ user: req.user._id });
-  if (count >= 3) {
-    return next(new AppError("Maximum limit of 3 resumes reached. Please delete an existing version to upload a new one.", 400));
+  if (count >= 10) {
+    return next(new AppError("Maximum limit of 10 resumes reached. Please delete an existing version to upload a new one.", 400));
   }
 
   // Build signed file URL for the uploaded resume
@@ -155,8 +156,8 @@ export const analyzeResume = asyncHandler(async (req, res, next) => {
   }
 
   const count = await Resume.countDocuments({ user: req.user._id });
-  if (count >= 3) {
-    return next(new AppError("Maximum limit of 3 resumes reached. Please delete an existing version to upload a new one.", 400));
+  if (count >= 10) {
+    return next(new AppError("Maximum limit of 10 resumes reached. Please delete an existing version to upload a new one.", 400));
   }
 
   console.time("ResumeAnalysis");

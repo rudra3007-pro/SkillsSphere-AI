@@ -1,25 +1,12 @@
 import { useState, useRef, useCallback } from "react";
-import {
-  ClipboardList,
-  Upload,
-  Trash2,
-  Sparkles,
-  ClipboardPaste,
-  CheckCircle2,
-  FileText,
-} from "lucide-react";
-import { TextArea, Button, useToast } from "../../../shared/components";
-/**
- * Cleans raw JD text:
- * - Collapses 3+ blank lines to 2
- * - Strips non-printable / zero-width chars
- * - Trims leading/trailing whitespace
- */
+import { ClipboardPaste, Upload, FileText } from "lucide-react";
+import { useToast } from "../../../shared/components";
+
 const cleanJDText = (raw) => {
   return raw
-    .replace(/[^\S\r\n]+/g, " ")           // collapse inline whitespace
-    .replace(/(\r?\n){3,}/g, "\n\n")        // max 2 consecutive blank lines
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")  // strip zero-width chars
+    .replace(/[^\S\r\n]+/g, " ")
+    .replace(/(\r?\n){3,}/g, "\n\n")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
     .trim();
 };
 
@@ -44,7 +31,6 @@ const JobDescriptionInput = ({ value, onChange }) => {
     [onChange, warning]
   );
 
-  /* ── Textarea change ── */
   const handleTextChange = (e) => {
     const text = e.target.value;
     setCharCount(text.length);
@@ -56,16 +42,6 @@ const JobDescriptionInput = ({ value, onChange }) => {
     }
   };
 
-  /* ── Auto-clean button ── */
-  const handleAutoClean = () => {
-    if (!value) return;
-    const cleaned = cleanJDText(value);
-    onChange(cleaned);
-    setCharCount(cleaned.length);
-    success("Job description formatting cleaned.");
-  };
-
-  /* ── Paste from clipboard ── */
   const handlePasteFromClipboard = async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -80,7 +56,6 @@ const JobDescriptionInput = ({ value, onChange }) => {
     }
   };
 
-  /* ── File upload ── */
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -106,7 +81,6 @@ const JobDescriptionInput = ({ value, onChange }) => {
     reader.readAsText(file);
   };
 
-  /* ── Drag & drop ── */
   const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
   const handleDragLeave = () => setIsDragOver(false);
   const handleDrop = (e) => {
@@ -116,38 +90,38 @@ const JobDescriptionInput = ({ value, onChange }) => {
     if (file) readFile(file);
   };
 
-  const charPercent = Math.min((charCount / CHAR_LIMIT) * 100, 100);
-  const charColor =
-    charPercent > 90 ? "text-red-400" :
-    charPercent > 70 ? "text-yellow-400" :
-    "text-text-muted";
-
   return (
-    <div className="space-y-3">
-      {/* Header row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-primary">
-          <ClipboardList className="w-5 h-5" />
-          <h3 className="text-lg font-bold text-gray-900 dark:text-text-main">
-            Job Description
-            <span className="ml-2 text-xs font-normal text-text-muted">(Optional)</span>
-          </h3>
+    <div className="flex flex-col h-full w-full">
+      {/* Header section */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+            <FileText className="w-5 h-5 text-indigo-500" />
+          </div>
+          <div>
+            <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">
+              Job Description <span className="text-[13px] font-medium text-gray-400 ml-1">(Optional)</span>
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              Paste the job description or upload a .txt file
+            </p>
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Paste from clipboard */}
+        {/* Buttons */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handlePasteFromClipboard}
-            className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-primary transition-colors py-1.5 px-3 border border-border rounded-full bg-gray-100 dark:bg-surface/50 hover:border-primary/40"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
-            <ClipboardPaste className="w-3.5 h-3.5" />
+            <ClipboardPaste className="w-3.5 h-3.5 text-gray-400" />
             Paste
           </button>
-
-          {/* Upload .txt */}
-          <label className="cursor-pointer">
+          
+          <label className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <Upload className="w-3.5 h-3.5 text-gray-400" />
+            Upload .txt
             <input
               ref={fileInputRef}
               type="file"
@@ -155,89 +129,33 @@ const JobDescriptionInput = ({ value, onChange }) => {
               accept=".txt,.text"
               onChange={handleFileChange}
             />
-            <div className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-primary transition-colors py-1.5 px-3 border border-border rounded-full bg-gray-100 dark:bg-surface/50 hover:border-primary/40 cursor-pointer">
-              <Upload className="w-3.5 h-3.5" />
-              Upload .txt
-            </div>
           </label>
-
-          {/* Auto-clean */}
-          {value && (
-            <button
-              type="button"
-              onClick={handleAutoClean}
-              className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-secondary transition-colors py-1.5 px-3 border border-border rounded-full bg-gray-100 dark:bg-surface/50 hover:border-secondary/40"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Auto-clean
-            </button>
-          )}
-
-          {/* Clear */}
-          {value && (
-            <button
-              type="button"
-              onClick={() => { onChange(""); setCharCount(0); }}
-              className="flex items-center gap-1.5 text-xs font-medium text-red-400/70 hover:text-red-400 transition-colors py-1.5 px-3 border border-red-400/20 rounded-full bg-red-400/5 hover:border-red-400/40"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Clear
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Drag-over drop zone wrapper */}
+      {/* Text Area */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative rounded-xl transition-all duration-200 ${
+        className={`relative flex-grow flex flex-col rounded-xl border transition-all duration-200 bg-white dark:bg-[#121214] ${
           isDragOver
-            ? "ring-2 ring-primary/60 bg-primary/5 scale-[1.005]"
-            : ""
+            ? "border-indigo-400 bg-indigo-50/50 shadow-[0_0_15px_rgba(99,102,241,0.15)]"
+            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
         }`}
       >
-        {isDragOver && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-primary/10 border-2 border-dashed border-primary pointer-events-none">
-            <FileText className="w-8 h-8 text-primary mb-2" />
-            <p className="text-sm font-semibold text-primary">Drop .txt file here</p>
-          </div>
-        )}
-
-        <TextArea
-          id="job-description"
-          placeholder="Paste the job description here, or drag & drop a .txt file…&#10;&#10;Include role requirements, responsibilities, and required skills for the best match score."
+        <textarea
           value={value}
           onChange={handleTextChange}
-          rows={7}
-          className={isDragOver ? "opacity-30 pointer-events-none" : ""}
+          placeholder="Paste the job description here, or drag & drop a .txt file...&#10;&#10;Include role requirements, responsibilities, and required skills for the best match score."
+          className={`w-full h-full min-h-[220px] p-5 rounded-xl resize-none bg-transparent text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none ${
+            isDragOver ? "opacity-30 pointer-events-none" : ""
+          }`}
         />
-      </div>
-
-      {/* Footer: char count + filled indicator */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          {value && (
-            <span className="flex items-center gap-1 text-xs text-secondary">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              JD added — match score will be included in analysis
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Progress bar */}
-          <div className="w-16 h-1 bg-border rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                charPercent > 90 ? "bg-red-400" :
-                charPercent > 70 ? "bg-yellow-400" :
-                "bg-primary"
-              }`}
-              style={{ width: `${charPercent}%` }}
-            />
-          </div>
-          <span className={`text-xs font-mono ${charColor}`}>
+        
+        {/* Character Count */}
+        <div className="absolute bottom-3 right-4 flex justify-end w-full pointer-events-none">
+          <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500">
             {charCount}/{CHAR_LIMIT}
           </span>
         </div>

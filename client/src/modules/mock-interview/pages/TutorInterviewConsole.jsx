@@ -3,13 +3,17 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { PlayCircle, PauseCircle, Save, ArrowLeft, MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
 import { apiRequest } from "../../../services/apiClient.js";
-import Navbar from "../../../shared/landing/Navbar";
+import Navbar from "../../../shared/components/Navbar";
+import Footer from "../../../shared/components/Footer";
+
 import Input from "../../../shared/components/Input";
 import TextArea from "../../../shared/components/TextArea";
 import { API_URL } from "../../../config/env";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import { useToast } from "../../../shared/components/toast/ToastProvider";
 
+
+import logger from "../../../utils/logger";
 
 const TutorInterviewConsole = () => {
   useDocumentTitle("Tutor Interview Console");
@@ -46,7 +50,7 @@ const TutorInterviewConsole = () => {
           setAnswersFeedback(initialFeedback);
         }
       } catch (err) {
-        console.error(err);
+        logger.error(err);
       } finally {
         setLoading(false);
       }
@@ -117,13 +121,13 @@ const TutorInterviewConsole = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 px-6 pb-6 pt-24"><Navbar /><div className="text-center">Loading session data...</div></div>;
-  if (!session || !session.userId || !session.answers) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 px-6 pb-6 pt-24"><div className="text-center">Session data is incomplete or missing.</div></div>;
+  if (loading) return <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900"><Navbar /><div className="flex-1 pt-24 text-center">Loading session data...</div><Footer /></div>;
+  if (!session || !session.userId || !session.answers) return <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900"><Navbar /><div className="flex-1 pt-24 text-center">Session data is incomplete or missing.</div><Footer /></div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 px-6 pb-6 pt-24">
-      
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+      <Navbar />
+      <div className="flex-1 px-6 pb-6 pt-24 max-w-5xl mx-auto w-full space-y-6">
         
         <div className="flex items-center justify-between">
           <div>
@@ -257,6 +261,7 @@ const TutorInterviewConsole = () => {
           </div>
         </div>
       </div>
+          <Footer />
     </div>
   );
 };

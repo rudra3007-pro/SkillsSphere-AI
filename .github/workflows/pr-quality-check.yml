@@ -1,0 +1,114 @@
+name: Enterprise PR Quality & Security Pipeline
+
+# Trigger the workflow on Pull Requests and pushes to main
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+# CONCURRENCY: Cancel in-progress runs if a new commit is pushed to the same PR
+# This saves GitHub Actions runner minutes and prevents redundant builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ==========================================================================
+  # JOB 1: Security & Dependency Auditing
+  # ==========================================================================
+  security-audit:
+    name: 🔒 Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🛡️ Audit Client Dependencies
+        working-directory: ./client
+        # Runs audit. "|| true" ensures it warns us but doesn't immediately fail the PR
+        run: npm audit --audit-level=high || true 
+
+      - name: 🛡️ Audit Server Dependencies
+        working-directory: ./server
+        run: npm audit --audit-level=high || true
+
+  # ==========================================================================
+  # JOB 2: Client (Frontend) Build & Test Matrix
+  # ==========================================================================
+  client-pipeline:
+    name: ⚛️ Client CI (Node ${{ matrix.node-version }})
+    needs: security-audit
+    runs-on: ubuntu-latest
+    
+    # MATRIX: Run this exact job simultaneously on multiple Node versions
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x] 
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm' # Enables automated dependency caching
+          cache-dependency-path: './client/package-lock.json'
+
+      - name: 📦 Install Client Dependencies
+        working-directory: ./client
+        run: npm ci # 'ci' is faster and strictly adheres to package-lock.json
+
+      - name: 🧹 Run Linter
+        working-directory: ./client
+        run: npm run lint --if-present
+
+      - name: 🏗️ Execute Production Build
+        working-directory: ./client
+        run: npm run build
+
+      - name: 🧪 Run Unit Tests
+        working-directory: ./client
+        run: npm run test --if-present
+
+  # ==========================================================================
+  # JOB 3: Server (Backend) Build & Test Matrix
+  # ==========================================================================
+  server-pipeline:
+    name: 🟢 Server CI (Node ${{ matrix.node-version }})
+    needs: security-audit
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: './server/package-lock.json'
+
+      - name: 📦 Install Server Dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: 🧹 Run Linter
+        working-directory: ./server
+        run: npm run lint --if-present
+
+      - name: 🧪 Run Unit Tests
+        working-directory: ./server
+        run: npm run test --if-present

@@ -11,14 +11,20 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@reduxjs/toolkit": "^2.11.2",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tanstack/react-virtual": "^3.13.26",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.8.0",
     "process": "^0.11.10",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.1",
     "recharts": "^3.8.1",
@@ -30,7 +36,9 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@esbuild/darwin-arm64": "^0.28.0",
     "@playwright/test": "^1.42.0",
+    "@rollup/rollup-darwin-arm64": "^4.61.0",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.5.2",
@@ -40,6 +48,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.26",
+    "jest-axe": "^10.0.0",
     "jsdom": "^24.0.0",
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.19",

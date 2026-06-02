@@ -7,6 +7,8 @@ import { MemoryRouter } from 'react-router-dom'
 import RecruiterJobsPage from '../RecruiterJobsPage'
 import * as jobPostingService from '../../services/jobPostingService'
 import { ToastProvider } from '../../../../shared/components/toast/ToastProvider'
+import Footer from "../../../../shared/components/Footer";
+
 
 // Mock the service
 vi.mock('../../services/jobPostingService', () => ({
@@ -15,7 +17,7 @@ vi.mock('../../services/jobPostingService', () => ({
 }))
 
 // Mock components
-vi.mock('../../../../shared/landing/Navbar', () => ({
+vi.mock('../../../../shared/components/Navbar', () => ({
   default: () => <nav data-testid="navbar">Navbar</nav>,
 }))
 
@@ -69,7 +71,8 @@ vi.mock('../../../../shared/components', async (importOriginal) => {
         <button onClick={() => onViewStats(job)} data-testid={`stats-${job._id || job.id}`}>Stats</button>
         <button onClick={() => onViewApplicants(job)} data-testid={`applicants-${job._id || job.id}`}>Applicants</button>
         <button onClick={() => onDelete(job)} data-testid={`delete-${job._id || job.id}`}>Delete</button>
-      </div>
+            <Footer />
+    </div>
     )
   }
 })

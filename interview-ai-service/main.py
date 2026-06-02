@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from cors_config import get_cors_config
 from routers.transcription import router as transcription_router
 from routers.evaluation import router as evaluation_router
+
 
 app = FastAPI(
     title="Interview AI Service",
@@ -15,13 +17,10 @@ async def add_security_headers(request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
-# Allow the Node.js backend to communicate with this service
+# Allow only configured trusted browser origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    **get_cors_config(),
 )
 
 
@@ -31,6 +30,41 @@ async def health_check():
     return {"status": "ok", "service": "interview-ai-service"}
 
 
+@app.get("/api/health")
+async def api_health_check():
+    """Health check endpoint under the same /api prefix used by service routers."""
+    return {"status": "ok", "service": "interview-ai-service", "prefix": "/api"}
+
+
+@app.middleware("http")
+async def log_404_path(request: Request, call_next):
+    response = await call_next(request)
+    if response.status_code == 404:
+        # Helpful when Node calls the wrong path (e.g. /evaluate vs /api/evaluate)
+        print(f"[interview-ai-service] 404 Not Found: {request.method} {request.url}")
+    return response
+
+
+@app.get("/api/routes")
+async def routes():
+    """Return the expected public routes for Node clients.
+
+    This helps prevent route prefix mismatches like:
+    - calling /evaluate instead of /api/evaluate
+    - calling /transcribe instead of /api/transcribe
+    """
+    return {
+        "service": "interview-ai-service",
+        "routes": {
+            "health": "/api/health",
+            "evaluate": "/api/evaluate",
+            "transcribe": "/api/transcribe",
+            "transcription_ws": "/api/ws/transcribe",
+        }
+    }
+
+
 # Register routers
 app.include_router(transcription_router, prefix="/api")
 app.include_router(evaluation_router, prefix="/api")
+

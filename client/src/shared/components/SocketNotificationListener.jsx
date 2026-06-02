@@ -2,9 +2,13 @@ import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { io } from "socket.io-client";
 import { useToast } from "./toast/ToastProvider";
-import { addLiveNotification, getUnreadCount } from "../../features/notifications/notificationsSlice";
+import logger from "../../utils/logger";
 
-const SOCKET_URL = ""; // Connects to the same origin as the frontend (proxied to 5000)
+import {
+  addLiveNotification,
+  getUnreadCount,
+  setSocketStatus,
+} from "../../features/notifications/notificationsSlice";
 
 /**
  * A global component that listens for socket notifications and triggers toasts.
@@ -16,8 +20,8 @@ const SocketNotificationListener = () => {
   const socketRef = useRef(null);
   const dispatch = useDispatch();
 
-  // Keep a stable ref to toast so the socket effect doesn't re-run
-  // when the toast context object changes identity across renders
+  // Keep a stable ref to toast so the socket effect does not re-run when the
+  // toast context object changes identity across renders.
   const toastRef = useRef(toast);
   useEffect(() => {
     toastRef.current = toast;
@@ -26,93 +30,91 @@ const SocketNotificationListener = () => {
   useEffect(() => {
     const userId = user?._id || user?.id;
 
-    // Only connect if user is logged in and we have an ID
     if (!token || !userId) {
       if (socketRef.current) {
+        dispatch(setSocketStatus("idle"));
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      return;
+      return undefined;
     }
 
-    // Initialize socket connection
-    if (!socketRef.current) {
-      // Connect to relative path (uses Vite proxy).
-      // The JWT token is sent in the handshake auth object so the server
-      // can verify identity in io.use() before any events are processed.
-      socketRef.current = io("/", {
-        transports: ["websocket"],
-        path: "/socket.io",
-        auth: { token },
-      });
+    socketRef.current = io("/", {
+      transports: ["websocket"],
+      path: "/socket.io",
+      auth: { token },
+    });
 
-      socketRef.current.on("connect", () => {
-        // No userId needed — the server reads it from the verified JWT
-        socketRef.current.emit("join-notifications");
-      });
+    const socket = socketRef.current;
 
-      socketRef.current.on("notification-ready", (data) => {
-        // Successfully joined room
-      });
+    const handleConnect = () => {
+      dispatch(setSocketStatus("connected"));
+      socket.emit("join-notifications");
+    };
 
-      socketRef.current.on("application-status-updated", (data) => {
-        const { jobTitle, status } = data;
-        
-        const message = `Your application for "${jobTitle}" was updated to "${status.charAt(0).toUpperCase() + status.slice(1)}".`;
-        const title = "Application Update";
-        
-        if (status === "rejected") {
-          toastRef.current.error(message, title);
-        } else {
-          toastRef.current.success(message, title);
-        }
+    const handleApplicationStatusUpdated = (data) => {
+      const { jobTitle, status } = data;
+      const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+      const message = `Your application for "${jobTitle}" was updated to "${formattedStatus}".`;
+      const title = "Application Update";
 
-        // Fetch updated unread count from the DB to sync the unread badge
-        dispatch(getUnreadCount());
-      });
+      if (status === "rejected") {
+        toastRef.current.error(message, title);
+      } else {
+        toastRef.current.success(message, title);
+      }
 
-      socketRef.current.on("new-notification", (notif) => {
-        // Dispatch to global notifications Redux state in real-time
-        dispatch(addLiveNotification(notif));
+      dispatch(getUnreadCount());
+    };
 
-        // Skip toast if it is a job application update, since it is handled by the dedicated application-status-updated socket listener
-        if (notif.type === "application" || notif.type === "application-status-updated") {
-          return;
-        }
+    const handleNewNotification = (notif) => {
+      dispatch(addLiveNotification(notif));
 
-        if (notif.type === "skill_gap_alert") {
-          toastRef.current.error(notif.message, notif.title || "Skill Gap Alert");
-        } else {
-          toastRef.current.success(notif.message, notif.title || "Notification");
-        }
-      });
+      if (
+        notif.type === "application" ||
+        notif.type === "application-status-updated"
+      ) {
+        return;
+      }
 
-      socketRef.current.on("disconnect", (reason) => {
-        // Handled
-      });
+      if (notif.type === "skill_gap_alert") {
+        toastRef.current.error(notif.message, notif.title || "Skill Gap Alert");
+      } else {
+        toastRef.current.success(notif.message, notif.title || "Notification");
+      }
+    };
 
-      socketRef.current.on("connect_error", (err) => {
-        // Server rejected the connection (e.g. invalid or expired token)
-        console.warn("[Socket] Connection refused:", err.message);
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      });
-    } else {
-      // Socket already exists — re-join the room (e.g. after a user state update)
-      socketRef.current.emit("join-notifications");
-    }
+    const handleDisconnect = (reason) => {
+      if (reason !== "io client disconnect") {
+        dispatch(setSocketStatus("reconnecting"));
+      }
+    };
 
-    // Proper cleanup: disconnect socket when component unmounts or deps change
+    const handleConnectError = (err) => {
+      logger.warn("[Socket] Connection refused:", err.message);
+      dispatch(setSocketStatus("disconnected"));
+      socket.disconnect();
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("application-status-updated", handleApplicationStatusUpdated);
+    socket.on("new-notification", handleNewNotification);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      socket.off("connect", handleConnect);
+      socket.off("application-status-updated", handleApplicationStatusUpdated);
+      socket.off("new-notification", handleNewNotification);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+      dispatch(setSocketStatus("idle"));
+      socket.disconnect();
+      socketRef.current = null;
     };
   }, [user, token, dispatch]);
 
-  return null; // This component has no UI
+  return null;
 };
 
 export default SocketNotificationListener;
-

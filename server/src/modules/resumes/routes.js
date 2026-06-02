@@ -27,6 +27,41 @@ const router = express.Router();
  *   post:
  *     summary: Upload a resume file
  *     tags: [Resumes]
+ * /api/interviews/topics:
+ *   get:
+ *     summary: Retrieve available practice tracks and question pools
+ *     tags: [Mock Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully compiled topics directory
+ */
+router.get(
+  "/topics",
+  protect,
+  asyncHandler(async (req, res) => {
+    const interviewTopicsPool = [
+      { id: "react-dev", title: "React.js Core Concepts", questionsCount: 10, difficulty: "Intermediate" },
+      { id: "node-sys", title: "Node.js Back-End Systems", questionsCount: 8, difficulty: "Advanced" },
+      { id: "dsa-algo", title: "Data Structures & Algorithms", questionsCount: 15, difficulty: "Hard" }
+    ];
+
+    return res.status(200).json({
+      success: true,
+      topics: interviewTopicsPool
+    });
+  })
+);
+
+// 2. LIFECYCLE CREATION ENGINE (START SESSION)
+
+/**
+ * @openapi
+ * /api/interviews/start:
+ *   post:
+ *     summary: Instantiate a new adaptive mock interview workspace track
+ *     tags: [Mock Interviews]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -44,6 +79,19 @@ const router = express.Router();
  *         description: Resume uploaded successfully
  *       400:
  *         description: Invalid or spoofed file (magic-byte validation failed)
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - topicId
+ *             properties:
+ *               topicId:
+ *                 type: string
+ *               difficulty:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Environment initialized and session frames locked
  */
 router.post(
   "/upload",
@@ -80,6 +128,36 @@ router.post(
  *         description: Analysis complete
  *       400:
  *         description: Invalid or spoofed file (magic-byte validation failed)
+ * /api/interviews/{id}/answer:
+ *   post:
+ *     summary: Submit a transcribed string response for structural evaluation
+ *     description: Enforces an isolated connection handler containing a strict timeout barrier against the Python NLP evaluator container.
+ *     tags: [Mock Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - question
+ *               - answerText
+ *             properties:
+ *               question:
+ *                 type: string
+ *               answerText:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Evaluation output resolved cleanly (or fallback injected)
  */
 router.post(
   "/analyze",
@@ -102,6 +180,21 @@ router.post(
  *     responses:
  *       200:
  *         description: Success
+ * /api/interviews/{id}/complete:
+ *   post:
+ *     summary: Terminate an open interview window frame and calculate structural statistics
+ *     tags: [Mock Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Aggregate records locked down and calculated
  */
 router.get("/me/latest", protect, getLatestResume);
 router.get("/list", protect, authorizeRoles("student"), listResumes);
@@ -126,6 +219,13 @@ router.delete("/:id", protect, authorizeRoles("student"), deleteResume);
  *     responses:
  *       200:
  *         description: Success
+ * /api/interviews/ai-status:
+ *   get:
+ *     summary: Verify health metrics status of upstream microservices
+ *     tags: [Mock Interviews]
+ *     responses:
+ *       200:
+ *         description: Returns communication status data maps
  */
 router.get("/result/:id", protect, getResumeResult);
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Navbar from "../../../shared/landing/Navbar";
+import Navbar from "../../../shared/components/Navbar";
+import Footer from "../../../shared/components/Footer";
+
 import CameraCheck from "../components/CameraCheck";
 import PersonaSelector from "../components/PersonaSelector";
 import Button from "../../../shared/components/Button";
@@ -8,6 +10,8 @@ import Select from "../../../shared/components/Select";
 import { Play, GraduationCap, History, Loader2, Sparkles, Zap, ChevronRight, ArrowLeft } from "lucide-react";
 import { getTopics, startSession } from "../services/interviewService";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+
+import logger from "../../../utils/logger";
 
 const DIFFICULTY_LEVELS = [
   { value: "easy", label: "Easy" },
@@ -38,7 +42,7 @@ const InterviewLobby = () => {
         }
       } catch (err) {
         setError("Failed to load interview topics. Please try again.");
-        console.error("[InterviewLobby] Error fetching topics:", err);
+        logger.error("[InterviewLobby] Error fetching topics:", err);
       } finally {
         setLoading(false);
       }
@@ -52,14 +56,14 @@ const InterviewLobby = () => {
     setError(null);
 
     try {
-      const res = await startSession(topic, difficulty);
+      const res = await startSession(topic, difficulty, selectedPersona);
       const sessionId = res.data?.sessionId;
       if (sessionId) {
         navigate(`/mock-interview/${sessionId}`, { replace: true });
       }
     } catch (err) {
       setError(err.message || "Failed to start interview. Please try again.");
-      console.error("[InterviewLobby] Error starting session:", err);
+      logger.error("[InterviewLobby] Error starting session:", err);
     } finally {
       setStarting(false);
     }
@@ -79,7 +83,7 @@ const InterviewLobby = () => {
 
       <Navbar />
 
-      <main className="relative z-10 pt-28 pb-12 max-w-[1200px] mx-auto px-4 sm:px-8 min-h-[calc(100vh-80px)] flex flex-col gap-10">
+      <main className="relative z-10 pt-8 pb-12 max-w-[1200px] mx-auto px-4 sm:px-8 min-h-[calc(100vh-80px)] flex flex-col gap-10">
         
         {/* Header Section */}
         <header className="text-center mb-2 animate-[fadeIn_0.8s_ease-out]">
@@ -216,6 +220,7 @@ const InterviewLobby = () => {
 
         </div>
       </main>
+          <Footer />
     </div>
   );
 };

@@ -9,20 +9,29 @@ import { ToastProvider } from '../shared/components';
 import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import { ThemeProvider } from '../shared/contexts/ThemeContext.jsx';
 import { suppressReactScriptTagWarning } from '../utils/logger';
+import TopLoadingBar from '../shared/components/TopLoadingBar.jsx';
+
+// Intercept React.lazy to show top progress bar during chunk loading
+const originalLazy = React.lazy;
+React.lazy = (factory) => {
+  return originalLazy(async () => {
+    window.dispatchEvent(new Event('route-loading-start'));
+    try {
+      return await factory();
+    } finally {
+      window.dispatchEvent(new Event('route-loading-stop'));
+    }
+  });
+};
 
 suppressReactScriptTagWarning();
-
-const savedTheme =
-  localStorage.getItem("skillssphere.theme") || "light";
-
-document.documentElement.classList.toggle("dark", savedTheme === "dark");
-document.documentElement.classList.toggle("light", savedTheme === "light");
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
       <ThemeProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <TopLoadingBar />
           <ToastProvider>
             <ErrorBoundary>
               <App />

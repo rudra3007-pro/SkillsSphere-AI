@@ -1,15 +1,28 @@
 import { useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Check, X } from "lucide-react";
 import { registerUser } from "../../features/auth/authSlice";
 import { useToast } from "../../shared/components";
 import Button from "../../shared/components/Button";
 import Input from "../../shared/components/Input";
 import Select from "../../shared/components/Select";
-import Navbar from "../../shared/landing/Navbar";
+import GoogleOAuthButton from "../../shared/components/GoogleOAuthButton";
+import Navbar from "../../shared/components/Navbar";
 import { API_URL } from "../../config/env";
+import { z } from "zod";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+  role: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
 // Helper function to calculate password strength
 const calculatePasswordStrength = (password) => {
@@ -53,7 +66,7 @@ const Register = () => {
   const { loading } = useSelector((state) => state.auth);
   const { success, warning, error: showError } = useToast();
 
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
@@ -63,11 +76,11 @@ const Register = () => {
 
   const [errors, setErrors] = useState({});
 
-  const strength = useMemo(() => calculatePasswordStrength(form.password), [form.password]);
+  const strength = useMemo(() => calculatePasswordStrength(formData.password), [formData.password]);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setForm({ ...form, [id]: value });
+    setFormData({ ...formData, [id]: value });
 
     if (errors[id] || errors.form) {
       setErrors({ ...errors, [id]: "", form: "" });
@@ -75,31 +88,27 @@ const Register = () => {
   };
 
   const handleRoleChange = (e) => {
-    setForm({ ...form, role: e.target.value });
+    setFormData({ ...formData, role: e.target.value });
     if (errors.role || errors.form) {
       setErrors({ ...errors, role: "", form: "" });
     }
   };
 
   const validate = () => {
+    const parsed = registerSchema.safeParse(formData);
     const newErrors = {};
 
-    if (!form.name.trim()) newErrors.name = "Name is required";
-    else if (form.name.trim().length < 2)
-      newErrors.name = "Name must be at least 2 characters";
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue) => {
+        if (!newErrors[issue.path[0]]) {
+          newErrors[issue.path[0]] = issue.message;
+        }
+      });
+    }
 
-    if (!form.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
-      newErrors.email = "Please enter a valid email";
-
-    if (!form.password) newErrors.password = "Password is required";
-    else if (strength.score < 4)
+    if (formData.password && strength.score < 4) {
       newErrors.password = "Please create a stronger password (at least Good)";
-
-    if (!form.confirmPassword)
-      newErrors.confirmPassword = "Please confirm your password";
-    else if (form.password !== form.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
+    }
 
     return newErrors;
   };
@@ -116,14 +125,14 @@ const Register = () => {
       return;
     }
 
-    const email = form.email.trim().toLowerCase();
+    const email = formData.email.trim().toLowerCase();
 
     const resultAction = await dispatch(
       registerUser({
-        name: form.name.trim(),
+        name: formData.name.trim(),
         email,
-        password: form.password,
-        role: form.role,
+        password: formData.password,
+        role: formData.role,
       }),
     );
 
@@ -156,13 +165,13 @@ const Register = () => {
   ];
 
   const passwordsMatch =
-    form.password && form.confirmPassword && form.password === form.confirmPassword;
+    formData.password && formData.confirmPassword && formData.password === formData.confirmPassword;
 
   const isSubmitDisabled =
     loading ||
-    !form.password ||
-    !form.confirmPassword ||
-    form.password !== form.confirmPassword ||
+    !formData.password ||
+    !formData.confirmPassword ||
+    formData.password !== formData.confirmPassword ||
     strength.score < 4;
 
   return (
@@ -187,7 +196,7 @@ const Register = () => {
               id="name"
               label="Full Name"
               placeholder="Enter your full name"
-              value={form.name}
+              value={formData.name}
               onChange={handleChange}
               error={errors.name}
               disabled={loading}
@@ -198,7 +207,7 @@ const Register = () => {
               type="email"
               label="Email"
               placeholder="Enter your email"
-              value={form.email}
+              value={formData.email}
               onChange={handleChange}
               error={errors.email}
               disabled={loading}
@@ -210,14 +219,14 @@ const Register = () => {
                 type="password"
                 label="Password"
                 placeholder="Create a password"
-                value={form.password}
+                value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
                 disabled={loading}
               />
               
               {/* Password Strength Indicator */}
-              {form.password && (
+              {formData.password && (
                 <div className="mt-1 flex flex-col gap-2">
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-slate-500 dark:text-slate-400">Password Strength:</span>
@@ -255,7 +264,7 @@ const Register = () => {
               type="password"
               label="Confirm Password"
               placeholder="Confirm your password"
-              value={form.confirmPassword}
+              value={formData.confirmPassword}
               onChange={handleChange}
               error={errors.confirmPassword}
               disabled={loading}
@@ -269,7 +278,7 @@ const Register = () => {
             <Select
               id="role"
               label="I am a"
-              value={form.role}
+              value={formData.role}
               onChange={handleRoleChange}
               options={roleOptions}
               disabled={loading}
@@ -291,51 +300,17 @@ const Register = () => {
               {errors.form}
             </p>
           )}
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => {
-                const redirect = encodeURIComponent(
-                  `${window.location.origin}/auth/callback`,
-                );
-                window.location.href = `${API_URL}/api/auth/google?redirect=${redirect}`;
-              }}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 
-                          bg-white hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl
-                          text-gray-900 dark:text-white font-medium transition-all duration-200
-                          hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-          </div>
+          <GoogleOAuthButton role={formData.role} />
         </form>
         {/* Footer */}
         <p className="text-center mt-4 sm:mt-5 text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
           Already have an account?{" "}
-          <span
-            className="text-blue-400 cursor-pointer hover:underline"
-            onClick={() => navigate("/login")}
+          <Link
+            to="/login"
+            className="text-blue-400 hover:underline"
           >
             Login
-          </span>
+          </Link>
         </p>
       </div>
     </div>

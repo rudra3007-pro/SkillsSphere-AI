@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Navbar from "../../../shared/landing/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "../../../shared/components/Navbar";
+import Footer from "../../../shared/components/Footer";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
 const TermsOfServicePage = () => {

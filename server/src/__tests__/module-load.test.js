@@ -9,6 +9,7 @@ const criticalModules = [
   "../utils/AppError.js",
   "../utils/asyncHandler.js",
   "../modules/auth/routes.js",
+  "../modules/chat/routes.js",
   "../modules/resumes/routes.js",
   "../modules/jobs/routes.js",
   "../modules/roadmap/routes.js",

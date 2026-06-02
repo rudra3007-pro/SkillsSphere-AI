@@ -12,6 +12,8 @@ import Resume from "../../database/models/Resume.js";
 import redisClient from "../../config/redis.js";
 
 
+import logger from "../../utils/logger.js";
+
 /**
  * Create a new job posting
  * @param {Object} jobData - Job data
@@ -578,7 +580,7 @@ export const applyToJob = async (jobId, applicantId, options = {}) => {
 
       // Re-evaluate candidate match asynchronously
       recruiterIntelligenceService.evaluateCandidateMatch(existing._id).catch(err => {
-        console.error("Failed to evaluate candidate match on re-apply:", err);
+        logger.error("Failed to evaluate candidate match on re-apply:", err);
       });
 
       return existing;
@@ -619,7 +621,7 @@ export const applyToJob = async (jobId, applicantId, options = {}) => {
 
   } catch (error) {
     await session.abortTransaction();
-    console.error("Transaction aborted in applyToJob:", error);
+    logger.error("Transaction aborted in applyToJob:", error);
     throw error;
   } finally {
     session.endSession();
@@ -627,7 +629,7 @@ export const applyToJob = async (jobId, applicantId, options = {}) => {
 
   // Evaluate candidate match asynchronously
   recruiterIntelligenceService.evaluateCandidateMatch(application._id).catch(err => {
-    console.error("Failed to evaluate candidate match:", err);
+    logger.error("Failed to evaluate candidate match:", err);
   });
 
   return application;
@@ -1147,7 +1149,7 @@ export const updateApplicationStatus = async (applicationId, recruiterId, { stat
   // Create persistent notification for the student
   const notification = await Notification.create({
     userId: application.applicant,
-    type: "application_status",
+    type: "application",
     title: "Application Status Updated",
     message: `Your application for ${application.job.title} has been marked as ${status}.`,
     relatedData: { jobId: application.job._id, studentId: application.applicant, applicationId: application._id }

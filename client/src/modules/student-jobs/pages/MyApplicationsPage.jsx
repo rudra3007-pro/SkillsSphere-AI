@@ -15,7 +15,9 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react";
-import Navbar from "../../../shared/landing/Navbar";
+import Navbar from "../../../shared/components/Navbar";
+import Footer from "../../../shared/components/Footer";
+
 import LoadingState from "../../../shared/components/LoadingState";
 import ConfirmDialog from "../../../shared/components/ConfirmDialog";
 import {
@@ -347,7 +349,7 @@ const MyApplicationsPage = () => {
     <main className="min-h-screen bg-[#d8dde5] dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] text-gray-900 dark:text-slate-100 flex flex-col pt-24">
       <Navbar />
 
-      <div className="h-24 md:h-32 shrink-0"></div>
+
 
       <div className={`container mx-auto px-4 pb-12 flex-1 ${viewMode === 'list' ? 'max-w-4xl' : 'max-w-7xl'}`}>
         
@@ -542,6 +544,7 @@ const MyApplicationsPage = () => {
           background: rgba(59, 130, 246, 0.5);
         }
       `}} />
+          <Footer />
     </main>
   );
 };

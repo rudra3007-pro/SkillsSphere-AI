@@ -1,7 +1,8 @@
-import { AlertCircle, CheckCircle2, Loader2, UploadCloud } from "lucide-react";
+import { CloudUpload, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useToast } from "../../../shared/components";
-import Button from "../../../shared/landing/Button";
+import Button from "../../../shared/components/Button";
+
 const MAX_RESUME_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const SUPPORTED_RESUME_EXTENSIONS = [".pdf", ".doc", ".docx"];
 const SUPPORTED_RESUME_MIME_TYPES = [
@@ -9,11 +10,6 @@ const SUPPORTED_RESUME_MIME_TYPES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
-
-const formatFileSize = (bytes) => {
-  if (!Number.isFinite(bytes)) return "5 MB";
-  return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-};
 
 const isSupportedFile = (file) => {
   if (!file) return false;
@@ -26,7 +22,7 @@ const isSupportedFile = (file) => {
   return SUPPORTED_RESUME_MIME_TYPES.includes(file.type) || hasValidExtension;
 };
 
-const validateResumeFile = (file) => {
+export const validateResumeFile = (file) => {
   if (!file) {
     return "Please choose a resume file to upload.";
   }
@@ -40,71 +36,26 @@ const validateResumeFile = (file) => {
   }
 
   if (file.size > MAX_RESUME_FILE_SIZE_BYTES) {
-    return `Resume file is too large. Please upload a file up to ${formatFileSize(MAX_RESUME_FILE_SIZE_BYTES)}.`;
+    return "Resume file is too large. Please upload a file up to 5 MB.";
   }
 
   return "";
 };
 
-const getUploadErrorMessage = (error) => {
-  if (error?.name === "AbortError" || /timeout/i.test(error?.message || "")) {
-    return "Upload timed out. Please check your connection and try again.";
-  }
-
-  if (error?.status === 0 || /network/i.test(error?.message || "")) {
-    return "Network error while uploading. Please check your connection and try again.";
-  }
-
-  if (error?.status >= 500) {
-    return "Server error while uploading your resume. Please try again in a moment.";
-  }
-
-  if (error?.status >= 400) {
-    return error.message || "Upload was rejected. Please check your resume and try again.";
-  }
-
-  return error?.message || "Invalid upload response. Please try again.";
-};
-
-const DragDropUpload = ({ onFileUpload }) => {
-  const { success, warning, error: showError } = useToast();
+const DragDropUpload = ({ onFileUpload, disabled = false, isUploading = false, uploadProgressLabel = "" }) => {
+  const { warning } = useToast();
   const [isDragActive, setIsDragActive] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadError, setUploadError] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
 
   const processFileUpload = useCallback(
     async (file) => {
       const validationMessage = validateResumeFile(file);
       if (validationMessage) {
-        setSelectedFile(null);
-        setUploadError(validationMessage);
         warning(validationMessage);
         return;
       }
-
-      setIsUploading(true);
-      setUploadError("");
-
-      try {
-        const uploadResult = await onFileUpload(file);
-
-        if (uploadResult === false) {
-          throw new Error("Invalid upload response. Please try again.");
-        }
-
-        setSelectedFile(file);
-        success(`${file.name} uploaded. Starting analysis.`);
-      } catch (err) {
-        const message = getUploadErrorMessage(err);
-        setSelectedFile(null);
-        setUploadError(message);
-        showError(message);
-      } finally {
-        setIsUploading(false);
-      }
+      onFileUpload(file);
     },
-    [onFileUpload, showError, success, warning],
+    [onFileUpload, warning],
   );
 
   const handleDragEnter = useCallback((e) => {
@@ -133,14 +84,11 @@ const DragDropUpload = ({ onFileUpload }) => {
       const files = e.dataTransfer.files;
 
       if (!files || files.length === 0) {
-        processFileUpload(null);
         return;
       }
 
       if (files.length > 1) {
-        const message = "Please upload one resume file at a time.";
-        setUploadError(message);
-        warning(message);
+        warning("Please upload one resume file at a time.");
         return;
       }
 
@@ -152,7 +100,9 @@ const DragDropUpload = ({ onFileUpload }) => {
   const handleFileInput = useCallback(
     (e) => {
       const file = e.target.files?.[0] || null;
-      processFileUpload(file);
+      if (file) {
+        processFileUpload(file);
+      }
       e.target.value = "";
     },
     [processFileUpload],
@@ -170,7 +120,9 @@ const DragDropUpload = ({ onFileUpload }) => {
         }
       }
 
-      processFileUpload(pastedFile);
+      if (pastedFile) {
+        processFileUpload(pastedFile);
+      }
     },
     [processFileUpload],
   );
@@ -178,12 +130,10 @@ const DragDropUpload = ({ onFileUpload }) => {
   return (
     <div
       tabIndex="0"
-      className={`relative w-full p-12 border-2 border-dashed rounded-[1.5rem] transition-all duration-500 ease-out flex flex-col items-center justify-center space-y-6 focus:outline-none focus:ring-2 focus:ring-primary/40 outline-none ${
-        uploadError
-          ? "border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-950/10"
-          : isDragActive
-            ? "border-primary bg-primary/5 scale-[1.02] shadow-[0_0_40px_rgba(79,70,229,0.15)]"
-            : "border-gray-200 dark:border-border bg-gray-50 dark:bg-surface/30 hover:bg-gray-100 dark:hover:bg-surface/50 hover:border-primary/40"
+      className={`relative w-full h-full min-h-[300px] py-16 px-6 border-[1.5px] border-dashed rounded-3xl transition-all duration-300 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500/40 outline-none ${
+        isDragActive
+          ? "border-blue-400 bg-blue-50/50 scale-[1.01] shadow-lg"
+          : "border-indigo-300/60 dark:border-indigo-500/30 bg-transparent hover:bg-gray-50/50 dark:hover:bg-white/[0.02]"
       }`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -191,91 +141,71 @@ const DragDropUpload = ({ onFileUpload }) => {
       onDrop={handleDrop}
       onPaste={handlePaste}
     >
-      <div
-        className={`p-6 rounded-full transition-all duration-300 ${isDragActive ? "bg-primary/20 scale-110" : "bg-primary/10"}`}
-      >
-        <UploadCloud
-          className={`w-14 h-14 transition-colors duration-300 ${isDragActive ? "text-primary" : "text-primary/70"}`}
-        />
+      <div className="bg-indigo-100/50 dark:bg-indigo-500/10 p-5 rounded-full mb-6 relative">
+        {isUploading ? (
+          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+        ) : (
+          <CloudUpload className="w-10 h-10 text-indigo-500" />
+        )}
       </div>
 
-      <div className="text-center space-y-2">
-        <p className="text-2xl font-heading font-bold text-gray-800 dark:text-text-main italic">
-          Drag & Drop your resume here
+      <div className="text-center space-y-3 max-w-md">
+        <p className="text-2xl font-black text-gray-900 dark:text-white italic tracking-tight">
+          {isUploading ? (uploadProgressLabel || "Processing...") : "Drag & Drop your resume here"}
         </p>
-        <p className="text-text-muted">
-          Supported formats:{" "}
-          <span className="text-primary font-medium">PDF, DOC, DOCX</span>
-        </p>
-        <p className="text-xs text-text-muted">
-          Maximum file size: {formatFileSize(MAX_RESUME_FILE_SIZE_BYTES)}
-        </p>
-        <p className="text-xs text-primary/60 pt-2 font-medium opacity-80">
-          Or press{" "}
-          <kbd className="px-2 py-1 bg-gray-100 dark:bg-surface border border-gray-200 dark:border-border rounded text-gray-900 dark:text-text-main mx-1 shadow-sm">
-            Ctrl
-          </kbd>{" "}
-          +{" "}
-          <kbd className="px-2 py-1 bg-gray-100 dark:bg-surface border border-gray-200 dark:border-border rounded text-gray-900 dark:text-text-main mx-1 shadow-sm">
-            V
-          </kbd>{" "}
-          to paste
-        </p>
+        
+        {!isUploading && (
+          <>
+            <p className="text-[15px] text-gray-500 dark:text-gray-400">
+              Supported formats: <span className="text-indigo-600 dark:text-indigo-400 font-semibold">PDF, DOC, DOCX</span>
+            </p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+              Maximum file size: 5 MB
+            </p>
+            
+            <p className="text-sm text-indigo-400/80 dark:text-indigo-400/60 pt-3">
+              Or press{" "}
+              <kbd className="px-2 py-0.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md text-gray-700 dark:text-gray-300 text-xs shadow-sm font-sans">
+                Ctrl
+              </kbd>{" "}
+              +{" "}
+              <kbd className="px-2 py-0.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md text-gray-700 dark:text-gray-300 text-xs shadow-sm font-sans">
+                V
+              </kbd>{" "}
+              to paste
+            </p>
+          </>
+        )}
       </div>
 
-      <div className="my-4 flex items-center justify-center space-x-4 w-full max-w-sm px-4">
-        <div className="h-px bg-gray-300 dark:bg-border flex-1"></div>
-        <span className="text-[10px] text-text-muted uppercase font-black tracking-[0.3em]">
-          OR
-        </span>
-        <div className="h-px bg-gray-300 dark:bg-border flex-1"></div>
-      </div>
+      {!isUploading && (
+        <>
+          <div className="w-full max-w-[200px] flex items-center gap-4 my-8 opacity-60">
+            <div className="h-px bg-gray-300 dark:bg-gray-700 flex-1" />
+            <span className="text-[11px] font-black text-gray-400 tracking-[0.2em]">OR</span>
+            <div className="h-px bg-gray-300 dark:bg-gray-700 flex-1" />
+          </div>
 
-      <div className="relative group">
-        <input
-          type="file"
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
-          accept=".pdf,.doc,.docx"
-          onChange={handleFileInput}
-          disabled={isUploading}
-          title="Browse file"
-          aria-label="Browse resume file"
-        />
-        <Button
-          variant="secondary"
-          size="lg"
-          disabled={isUploading}
-          aria-busy={isUploading}
-          className="px-10 group-hover:scale-105 transition-transform duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            "Browse Files"
-          )}
-        </Button>
-      </div>
-
-      {uploadError && (
-        <div
-          className="mt-4 flex items-start gap-3 px-5 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-500/30 rounded-2xl text-red-700 dark:text-red-300"
-          role="alert"
-        >
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <p className="text-sm font-medium">{uploadError}</p>
-        </div>
-      )}
-
-      {selectedFile && (
-        <div className="mt-8 flex items-center gap-3 px-6 py-3 bg-secondary/10 border border-secondary/20 rounded-full animate-in fade-in zoom-in duration-300">
-          <CheckCircle2 className="w-5 h-5 text-secondary" />
-          <p className="text-sm font-semibold text-secondary truncate max-w-[250px]">
-            {selectedFile.name} ready for analysis
-          </p>
-        </div>
+          <div className="relative group">
+            <input
+              type="file"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleFileInput}
+              disabled={disabled}
+              title="Browse file"
+              aria-label="Browse resume file"
+            />
+            <Button
+              type="button"
+              variant="primary"
+              disabled={disabled}
+              className="px-8 py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold border-none rounded-xl dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors"
+            >
+              Browse Files
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );

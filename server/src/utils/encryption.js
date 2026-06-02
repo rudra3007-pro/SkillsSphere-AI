@@ -16,6 +16,7 @@ const getEncryptionKey = () => {
  */
 export const encrypt = (val) => {
   if (val === null || val === undefined) return val;
+  if (typeof val === "string" && val.startsWith("v1:")) return val;
   
   const stringText = typeof val === "string" ? val : JSON.stringify(val);
   const isJson = typeof val !== "string";
@@ -43,6 +44,7 @@ export const encrypt = (val) => {
  */
 export const encryptDeterministic = (val) => {
   if (val === null || val === undefined) return val;
+  if (typeof val === "string" && val.startsWith("v1:")) return val;
 
   const stringText = typeof val === "string" ? val : JSON.stringify(val);
   const isJson = typeof val !== "string";

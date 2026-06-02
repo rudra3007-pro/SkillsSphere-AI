@@ -117,6 +117,7 @@ const initialState = {
   items: [],
   unreadCount: 0,
   loading: false,
+  socketStatus: "idle",
   pagination: {
     page: 1,
     limit: 10,
@@ -143,22 +144,42 @@ const notificationsSlice = createSlice({
         state.pagination.total += 1;
       }
     },
+    setSocketStatus: (state, action) => {
+      state.socketStatus = action.payload;
+    },
     // Reset notification state on user logout
     resetNotifications: () => initialState,
   },
   extraReducers: (builder) => {
     builder
       // Fetch notifications list
-      .addCase(getNotifications.pending, (state) => {
+      .addCase(getNotifications.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        const requestedPage = Number(action.meta.arg?.page || 1);
+        if (requestedPage === 1) {
+          state.items = [];
+          state.pagination = {
+            ...state.pagination,
+            page: 1,
+            total: 0,
+            pages: 1,
+          };
+        }
       })
       .addCase(getNotifications.fulfilled, (state, action) => {
         state.loading = false;
         
         // If it's page 1, replace. If it's subsequent page, append (infinite scroll logic)
-        const { data: notifications = [], pagination } = action.payload;
-        if (pagination.page === 1) {
+        const { data: notifications = [], pagination = {} } = action.payload;
+        const safePagination = {
+          page: Math.max(1, Number(pagination.page || 1)),
+          limit: Math.max(1, Number(pagination.limit || 10)),
+          total: Math.max(0, Number(pagination.total || notifications.length)),
+          pages: Math.max(1, Number(pagination.pages || 1)),
+        };
+
+        if (safePagination.page === 1) {
           state.items = notifications;
         } else {
           // Merge avoiding duplicates
@@ -168,7 +189,7 @@ const notificationsSlice = createSlice({
           state.items = [...state.items, ...newItems];
         }
         
-        state.pagination = pagination;
+        state.pagination = safePagination;
       })
       .addCase(getNotifications.rejected, (state, action) => {
         state.loading = false;
@@ -272,6 +293,10 @@ const notificationsSlice = createSlice({
   },
 });
 
-export const { addLiveNotification, resetNotifications } = notificationsSlice.actions;
+export const {
+  addLiveNotification,
+  resetNotifications,
+  setSocketStatus,
+} = notificationsSlice.actions;
 
 export default notificationsSlice.reducer;

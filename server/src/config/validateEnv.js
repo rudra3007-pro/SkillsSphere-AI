@@ -1,6 +1,7 @@
 const REQUIRED_ENV_VARS = [
   { name: "JWT_SECRET", description: "Secret key for signing JWT tokens" },
   { name: "GOOGLE_CLIENT_ID", description: "Google Client ID for OAuth authentication" },
+  { name: "FILE_URL_SIGNING_SECRET", description: "Secret key for signing protected file URLs" },
 ];
 
 const WEAK_VALUES = new Set([
@@ -249,6 +250,50 @@ export const validateEmailConfig = (env = process.env) => {
   return { errors, warnings };
 };
 
+export const validateFileSigningSecret = (env = process.env) => {
+  const errors = [];
+  const warnings = [];
+  const production = isProduction(env);
+  const value = env.FILE_URL_SIGNING_SECRET;
+
+  if (isBlank(value)) {
+    addIssue(
+      production ? errors : warnings,
+      "FILE_URL_SIGNING_SECRET",
+      production
+        ? "is required for signing protected file URLs in production."
+        : "is not set. Signed file URLs will not work without it.",
+    );
+    return { errors, warnings };
+  }
+
+  const secret = String(value);
+
+  if (hasPlaceholderValue(secret)) {
+    addIssue(
+      production ? errors : warnings,
+      "FILE_URL_SIGNING_SECRET",
+      "must not use a weak, default, or placeholder value.",
+    );
+  }
+
+  if (production && secret.length < 32) {
+    addIssue(errors, "FILE_URL_SIGNING_SECRET", "must be at least 32 characters in production.");
+  } else if (!production && secret.length < 16) {
+    addIssue(warnings, "FILE_URL_SIGNING_SECRET", "is short. Use a longer value before deploying.");
+  }
+
+  if (secret === env.JWT_SECRET) {
+    addIssue(
+      production ? errors : warnings,
+      "FILE_URL_SIGNING_SECRET",
+      "must not be the same as JWT_SECRET. Use a separate secret for file signing.",
+    );
+  }
+
+  return { errors, warnings };
+};
+
 export const validateExternalApiKeys = (env = process.env) => {
   const errors = [];
   const warnings = [];
@@ -290,6 +335,40 @@ export const validateExternalApiKeys = (env = process.env) => {
   return { errors, warnings };
 };
 
+export const validateSocketRateLimiterConfig = (env = process.env) => {
+  const errors = [];
+  const warnings = [];
+  const production = isProduction(env);
+
+  const maybeInt = (name) => {
+    const v = env[name];
+    if (isBlank(v)) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) {
+      addIssue(production ? errors : warnings, name, `must be a non-negative integer.`);
+      return null;
+    }
+    return Math.floor(n);
+  };
+
+  const windowMs = maybeInt("SOCKET_RATE_WINDOW_MS");
+  const maxEvents = maybeInt("SOCKET_RATE_MAX_EVENTS");
+  const warningPercent = maybeInt("SOCKET_RATE_WARNING_PERCENT");
+  const warningCooldown = maybeInt("SOCKET_RATE_WARNING_COOLDOWN_MS");
+
+  if (windowMs !== null && windowMs <= 0) addIssue(production ? errors : warnings, "SOCKET_RATE_WINDOW_MS", "must be greater than 0");
+  if (maxEvents !== null && maxEvents <= 0) addIssue(production ? errors : warnings, "SOCKET_RATE_MAX_EVENTS", "must be greater than 0");
+  if (warningPercent !== null && (warningPercent < 0 || warningPercent > 100)) addIssue(production ? errors : warnings, "SOCKET_RATE_WARNING_PERCENT", "must be between 0 and 100");
+  if (warningCooldown !== null && warningCooldown < 0) addIssue(production ? errors : warnings, "SOCKET_RATE_WARNING_COOLDOWN_MS", "must be non-negative");
+
+  const enabled = env.SOCKET_RATE_ENABLED;
+  if (!isBlank(enabled) && !["true", "false"].includes(String(enabled).toLowerCase())) {
+    addIssue(production ? errors : warnings, "SOCKET_RATE_ENABLED", "must be 'true' or 'false'");
+  }
+
+  return { errors, warnings };
+};
+
 export const collectEnvValidationIssues = (env = process.env) => {
   const checks = [
     validateRequiredEnv,
@@ -297,6 +376,8 @@ export const collectEnvValidationIssues = (env = process.env) => {
     validateDatabaseUrl,
     validateEmailConfig,
     validateExternalApiKeys,
+    validateFileSigningSecret,
+    validateSocketRateLimiterConfig,
   ];
 
   return checks.reduce(

@@ -57,6 +57,22 @@ const classroomSessionSchema = new mongoose.Schema(
       default: "",
     },
 
+    whiteboardSnapshot: {
+      type: Array,
+      default: [],
+    },
+
+    participants: {
+      type: [
+        {
+          socketId: { type: String, required: true },
+          user: { type: Object, required: true },
+          joinedAt: { type: Date, default: Date.now }
+        }
+      ],
+      default: [],
+    },
+
     endedAt: {
       type: Date,
       default: null,

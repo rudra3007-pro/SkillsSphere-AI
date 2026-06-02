@@ -17,13 +17,15 @@ import {
   BarChart3
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import Button from "../../../shared/landing/Button";
+import Button from "../../../shared/components/Button";
 import SkillGapVenn from "./SkillGapVenn";
 import CoverLetterModal from "../../../shared/components/CoverLetterModal";
 import { generateCoverLetter } from "../services/resumeService";
 import AnalysisReportPDF from "./AnalysisReportPDF";
 import { useToast } from "../../../shared/components";
 import { exportToPDF } from "../../../utils/exportUtils";
+
+import logger from "../../../utils/logger";
 
 const ATS_BREAKDOWN_CONFIG = [
   { key: "formatting", label: "Formatting", offset: 4 },
@@ -222,7 +224,7 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
       });
       success("Report exported to PDF successfully.");
     } catch (err) {
-      console.error("PDF Export Error:", err);
+      logger.error("PDF Export Error:", err);
       const message = "We couldn't export the PDF report. Please try again.";
       setExportError(message);
       showError(err.message || message);
@@ -273,15 +275,7 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Top Banner */}
-      <div className="flex justify-center">
-        <div className="flex items-center gap-2 px-5 py-2 bg-primary/10 border border-primary/20 rounded-full shadow-lg backdrop-blur-md">
-          <Zap className="w-4 h-4 text-primary" />
-          <p className="text-xs font-bold text-primary tracking-wide uppercase">
-            Advanced AI Intelligence Active
-          </p>
-        </div>
-      </div>
+      {/* Top Banner removed, moved to parent layout */}
 
       {result.isScannedPdf && (
         <div className="flex flex-col md:flex-row items-center gap-4 p-5 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
@@ -304,131 +298,99 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
       {/* Main Score & Metrics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Trust Score */}
-        <div className="lg:col-span-1 bg-white dark:bg-surface border border-gray-200 dark:border-border rounded-[2rem] p-8 flex flex-col items-center justify-center relative overflow-hidden group shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50"></div>
-          <div className="relative z-10 text-center">
-             <div className="p-3 bg-primary/10 rounded-2xl text-primary inline-block mb-4 border border-primary/20">
-              <Sparkles className="w-8 h-8" />
-            </div>
-            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500 dark:text-text-muted mb-2">Trust Score</h2>
-            <div className={`text-7xl font-black tracking-tighter ${getScoreColor(score)}`}>
-              {score}%
-            </div>
-            
-            {/* Classification Level and Insights */}
-            {result.classification && (
-              <div className="mt-4 space-y-2">
-                <div className={`inline-block px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-gray-100 dark:bg-dark-bg border border-gray-200 dark:border-border shadow-sm ${getScoreColor(score)}`}>
-                  {typeof result.classification === 'object' ? result.classification.level : result.classification}
-                </div>
-                {typeof result.classification === 'object' && result.classification.label && (
-                  <p className="text-[10px] text-gray-500 dark:text-text-muted font-bold px-2 leading-relaxed italic">
-                    {result.classification.label}
-                  </p>
-                )}
-              </div>
-            )}
+        <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 flex flex-col items-center justify-between text-center shadow-sm">
+           <div className="mb-4">
+             <div className="inline-flex p-2 bg-purple-50 dark:bg-purple-500/10 rounded-xl text-purple-600 mb-4">
+               <Sparkles className="w-5 h-5" />
+             </div>
+             <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-1">Trust Score</h2>
+             <div className={`text-6xl font-black tracking-tighter ${getScoreColor(score)} leading-none mt-2`}>
+               {score}%
+             </div>
+           </div>
+           
+           <div className="space-y-3 mb-6">
+             <div className={`inline-flex px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${score >= 80 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : score >= 50 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+               {typeof result.classification === 'object' ? result.classification.level : (result.classification || "INTERMEDIATE")}
+             </div>
+             <div className="text-xs">
+               <p className="font-bold text-gray-700 dark:text-gray-300">Moderate Profile Strength</p>
+               <p className="italic font-medium text-gray-500 dark:text-gray-400 mt-0.5">(Skill Gaps Noted • Deep Experience)</p>
+             </div>
+           </div>
 
-            <p className="text-xs text-gray-500 dark:text-text-muted mt-4 font-bold max-w-[150px]">
-              {result.mode === "benchmark" 
-                ? "Market Readiness Benchmark" 
-                : isJDProvided 
-                ? "Optimized for Job Description" 
-                : "General Quality Baseline"}
-            </p>
-
-            {result.mode === "benchmark" && (
-              <div className="mt-4 flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
-                <Sparkles size={10} className="text-primary" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-primary">Benchmark Active</span>
-              </div>
-            )}
-
-          </div>
+           <div className="w-full pt-4 border-t border-gray-100 dark:border-white/5 text-[11px] font-bold text-gray-500 dark:text-gray-400">
+             {isJDProvided ? "Optimized for Job Description" : "General Quality Baseline"}
+           </div>
         </div>
 
         {/* Impact Score Widget */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-border rounded-[2rem] p-8 relative overflow-hidden group shadow-xl">
-           <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-400/10 rounded-lg">
-                  <Zap className="w-5 h-5 text-yellow-400" />
-                </div>
-                <h3 className="font-bold text-gray-900 dark:text-text-main">Impact Level</h3>
+        <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 shadow-sm flex flex-col">
+           <div className="flex items-center gap-2 mb-6">
+              <div className="p-1.5 bg-yellow-50 dark:bg-yellow-500/10 rounded-lg">
+                <Zap className="w-4 h-4 text-yellow-500" />
               </div>
-              <span className={`text-2xl font-black ${getScoreColor(result.impactMatch?.score)}`}>
-                {result.impactMatch?.score}%
-              </span>
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm">Impact Level</h3>
            </div>
-           <div className="space-y-4">
-              <div className="h-2 bg-gray-200 dark:bg-dark-bg rounded-full overflow-hidden">
+           
+           <div className="flex-grow flex flex-col items-center justify-center space-y-6">
+              <div className={`text-7xl font-black ${getScoreColor(result.impactMatch?.score)} leading-none`}>
+                {result.impactMatch?.score}%
+              </div>
+              <div className="w-full max-w-[200px] h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-yellow-400 transition-all duration-1000" 
                   style={{ width: `${result.impactMatch?.score}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-text-muted leading-relaxed">
-                Found <strong>{result.impactMatch?.totalFindings || 0}</strong> quantifiable metrics. {result.impactMatch?.feedback?.[0]}
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Found <strong className="text-gray-900 dark:text-white">{result.impactMatch?.totalFindings || 0}</strong> quantifiable metrics.
               </p>
            </div>
         </div>
 
         {/* ATS Readiness Checklist */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-border rounded-[2rem] p-8 shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <ShieldCheck className="w-5 h-5 text-secondary" />
+        <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 shadow-sm flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="p-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-text-main">ATS Readiness</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm">ATS Readiness</h3>
           </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 flex-grow">
             {checklist.map((item, i) => (
               <div key={i} className="flex items-center gap-2">
                 {item.status ? (
-                  <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                 )}
-                <span className={`text-xs font-medium ${item.status ? "text-text-muted" : "text-red-400"}`}>
+                <span className={`text-[11px] font-bold ${item.status ? "text-gray-600 dark:text-gray-400" : "text-red-500"}`}>
                   {item.label}
                 </span>
               </div>
             ))}
           </div>
 
-          {/* 🔗 Verified Links Section */}
           {result.verifiedLinks && result.verifiedLinks.length > 0 && (
-            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-border/50">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-text-muted mb-4">Verified Profiles</h3>
-              <div className="space-y-3">
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-white/5">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500 dark:text-gray-400 mb-3">Verified Profiles</h3>
+              <div className="flex flex-wrap gap-2">
                 {result.verifiedLinks.map((link, i) => (
-                  <div key={i} className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-dark-bg/40 border border-gray-200 dark:border-border rounded-2xl group hover:border-primary/40 transition-all shadow-sm">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`p-2 rounded-xl shrink-0 ${link.isValid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                        <Globe size={14} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-gray-900 dark:text-text-main truncate pr-2" title={link.url}>
-                          {link.url.replace(/^https?:\/\/(www\.)?/, '')}
-                        </p>
-                      </div>
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-lg text-[10px] font-bold text-gray-600 dark:text-gray-300 max-w-[150px] truncate">
+                       <Globe size={12} className="shrink-0" /> <span className="truncate">{link.url.replace(/^https?:\/\/(www\.)?/, '')}</span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                       {link.isValid ? (
-                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg shadow-sm">
-                            <ShieldCheck size={10} className="text-emerald-400" />
-                            <span className="text-[8px] font-black uppercase tracking-tight text-emerald-400">Verified</span>
-                         </div>
-                       ) : (
-                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-lg shadow-sm">
-                            <AlertCircle size={10} className="text-red-400" />
-                            <span className="text-[8px] font-black uppercase tracking-tight text-red-400">Dead Link</span>
-                         </div>
-                       )}
-                       <a href={link.url} target="_blank" rel="noreferrer" className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl text-gray-500 dark:text-text-muted hover:text-primary transition-all">
-                         <ExternalLink size={12} />
-                       </a>
-                    </div>
+                    {link.isValid ? (
+                      <div className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                         <ShieldCheck size={10} /> Verified
+                         <a href={link.url} target="_blank" rel="noreferrer"><ExternalLink size={10} className="ml-0.5 opacity-60 hover:opacity-100" /></a>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 px-2 py-1.5 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-lg text-[9px] font-black uppercase tracking-wider text-red-600 dark:text-red-400">
+                         <AlertCircle size={10} /> Dead Link
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -438,45 +400,28 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
       </div>
 
       {/* ATS Score Breakdown */}
-      <section className="bg-white dark:bg-surface border border-gray-200 dark:border-border rounded-[2rem] p-6 sm:p-8 shadow-xl">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+      <section className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 shadow-sm mt-6">
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-6 mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <BarChart3 className="w-5 h-5 text-primary" />
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+              <BarChart3 className="w-5 h-5 text-indigo-500" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-text-main">ATS Score Breakdown</h3>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">ATS Score Breakdown</h3>
           </div>
-          <span className={`text-2xl font-black ${getScoreColor(score)}`}>{score}%</span>
+          <span className={`text-3xl font-black ${getScoreColor(score)}`}>{score}%</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           {atsScoreBreakdown.map((category) => (
-            <div
-              key={category.key}
-              className="rounded-2xl border border-gray-200 dark:border-border bg-gray-50/80 dark:bg-dark-bg/40 p-4 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <h4 className="text-sm font-bold text-gray-900 dark:text-text-main">
-                  {category.label}
-                </h4>
-                <span className={`text-sm font-black ${getScoreColor(category.score)}`}>
-                  {category.score}%
-                </span>
+            <div key={category.key} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[13px] font-bold text-gray-900 dark:text-white">{category.label}</h4>
+                <span className={`text-sm font-black ${getScoreColor(category.score)}`}>{category.score}%</span>
               </div>
-              <div
-                className="h-2.5 bg-gray-200 dark:bg-dark-bg rounded-full overflow-hidden"
-                role="progressbar"
-                aria-label={`${category.label} ATS score`}
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow={category.score}
-              >
-                <div
-                  className={`h-full rounded-full transition-all duration-1000 ${getProgressColor(category.score)}`}
-                  style={{ width: `${category.score}%` }}
-                />
+              <div className="h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-1000 ${getProgressColor(category.score)}`} style={{ width: `${category.score}%` }} />
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-gray-500 dark:text-text-muted">
+              <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 pt-1">
                 {category.feedback}
               </p>
             </div>
@@ -493,18 +438,18 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Suggestions & Keywords */}
-        <div className="lg:col-span-7 space-y-8">
-          {/* Action Word Suggestions Cloud (Dynamic) */}
-          <div className="bg-white/80 dark:bg-surface/50 border border-gray-200 dark:border-border rounded-[2rem] p-8 shadow-xl">
+        <div className="lg:col-span-7 space-y-6">
+          {/* Action Word Suggestions Cloud */}
+          <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-               <div className="p-2 bg-primary/10 rounded-lg">
-                  <MessageSquare className="w-5 h-5 text-primary" />
+               <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+                  <MessageSquare className="w-5 h-5 text-indigo-500" />
                 </div>
-                <h3 className="text-lg font-bold">Suggested Power Verbs</h3>
+                <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Suggested Power Verbs</h3>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {actionWords.map((word, i) => (
-                <span key={i} className="px-3 py-1.5 bg-gray-100 dark:bg-dark-bg border border-gray-200 dark:border-border hover:border-primary/50 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-text-muted rounded-lg transition-all hover:text-primary cursor-default">
+                <span key={i} className="px-3 py-1.5 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-default">
                   {word}
                 </span>
               ))}
@@ -512,39 +457,38 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
           </div>
 
           {/* Strategic Improvements Section */}
-          <div className="bg-white/80 dark:bg-surface/50 border border-gray-200 dark:border-border rounded-[2rem] p-8 shadow-xl">
+          <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 bg-secondary/10 rounded-lg">
-                <Layout className="w-6 h-6 text-secondary" />
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl">
+                <Layout className="w-5 h-5 text-emerald-500" />
               </div>
-              <h3 className="text-xl font-heading font-bold text-gray-900 dark:text-text-main">
+              <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">
                 Strategic Improvements
               </h3>
             </div>
-            <div className="max-h-[400px] overflow-y-auto pr-4 custom-scrollbar">
+            <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               <ul className="space-y-6">
                 {(suggestions || []).map((suggestion, index) => {
                   const isCritical = suggestion.priority === "Critical";
                   const isStrategic = suggestion.priority === "Strategic";
+                  const colorTheme = isCritical ? 'red' : isStrategic ? 'indigo' : 'emerald';
                   
                   return (
-                    <li key={index} className="flex items-start gap-4 group">
-                      <div className={`mt-1 bg-gray-100 dark:bg-dark-bg border ${isCritical ? 'border-red-400/30' : isStrategic ? 'border-primary/30' : 'border-gray-200 dark:border-border'} rounded-xl p-2 group-hover:scale-110 transition-transform`}>
+                    <li key={index} className="flex items-start gap-4">
+                      <div className={`mt-1 p-2 bg-${colorTheme}-50 dark:bg-${colorTheme}-500/10 rounded-xl`}>
                         {isCritical ? (
-                          <AlertCircle className="w-4 h-4 text-red-400" />
+                          <AlertCircle className={`w-4 h-4 text-${colorTheme}-500`} />
                         ) : isStrategic ? (
-                          <Zap className="w-4 h-4 text-primary" />
+                          <Zap className={`w-4 h-4 text-${colorTheme}-500`} />
                         ) : (
-                          <CheckCircle2 className="w-4 h-4 text-secondary" />
+                          <CheckCircle2 className={`w-4 h-4 text-${colorTheme}-500`} />
                         )}
                       </div>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                           <span className={`text-[10px] font-black uppercase tracking-widest ${isCritical ? 'text-red-400' : isStrategic ? 'text-primary' : 'text-secondary'}`}>
-                             {suggestion.priority}
-                           </span>
-                        </div>
-                        <p className="text-gray-800 dark:text-text-main text-sm leading-relaxed font-medium">
+                        <span className={`text-[10px] font-black uppercase tracking-widest text-${colorTheme}-600 dark:text-${colorTheme}-400`}>
+                          {isCritical ? 'CRITICAL' : isStrategic ? 'STRATEGIC' : 'OPTIMIZATION'}
+                        </span>
+                        <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed font-medium">
                           {suggestion.text}
                         </p>
                       </div>
@@ -554,47 +498,45 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
               </ul>
             </div>
           </div>
-
         </div>
 
         {/* Right Column: Document & Metadata */}
-        <div className="lg:col-span-5 space-y-8">
-           {/* Missing Keywords (if JD or standard check fails) */}
-           <div className="bg-white/80 dark:bg-surface/50 border border-gray-200 dark:border-border rounded-[2rem] p-8 shadow-xl">
+        <div className="lg:col-span-5 space-y-6">
+           {/* Missing Keywords */}
+           <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-8 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-yellow-400/10 rounded-lg">
-                  <Zap className="w-5 h-5 text-yellow-400" />
+                <div className="p-2 bg-yellow-50 dark:bg-yellow-500/10 rounded-xl">
+                  <Zap className="w-5 h-5 text-yellow-500" />
                 </div>
-                <h3 className="font-bold text-gray-900 dark:text-text-main">Tech Keyword Gaps</h3>
+                <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Tech Keyword Gaps</h3>
               </div>
+              
               <div className="flex flex-wrap gap-2">
                 {result.keywordMatch?.missingKeywords?.length > 0 ? (
                   result.keywordMatch.missingKeywords.slice(0, 10).map((k, i) => (
-                    <span key={i} className="px-3 py-1 bg-red-400/5 border border-red-400/20 text-red-400 text-[10px] font-bold rounded-lg transition-colors hover:bg-red-400/10">
+                    <span key={i} className="px-3 py-1 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-lg transition-colors">
                       {k}
                     </span>
                   ))
                 ) : (
-                  <div className="w-full py-4 text-center space-y-2">
-                    <div className="inline-flex p-2 bg-secondary/10 rounded-full">
-                      <CheckCircle2 className="w-4 h-4 text-secondary" />
-                    </div>
-                    <p className="text-[10px] text-secondary font-black uppercase tracking-widest">Perfect Keyword Match</p>
+                  <div className="w-full py-6 flex flex-col items-center text-center space-y-3">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                    <p className="text-[11px] text-emerald-600 font-black uppercase tracking-widest">Perfect Keyword Match</p>
                   </div>
                 )}
               </div>
 
               {/* Missing Tech Standard Keywords */}
               {missingTechKeywords.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-border/50">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-text-muted mb-2">
+                <div className="mt-6 pt-6 border-t border-gray-100 dark:border-white/5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">
                     Add These Keywords to Boost Score
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {missingTechKeywords.map((item, i) => (
                       <span
                         key={i}
-                        className="px-2.5 py-1 bg-yellow-400/5 border border-yellow-400/20 text-yellow-400 text-[10px] font-bold rounded-lg capitalize transition-colors hover:bg-yellow-400/10"
+                        className="px-3 py-1.5 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 text-[10px] font-bold rounded-xl capitalize"
                         title={item.domain}
                       >
                         {item.keyword}
@@ -606,18 +548,18 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
            </div>
 
            {/* Preview */}
-           <div className="bg-white/80 dark:bg-surface/50 border border-gray-200 dark:border-border rounded-[2rem] p-6 h-[400px] shadow-xl overflow-hidden relative group">
+           <div className="bg-white dark:bg-[#121214] border border-gray-100 dark:border-white/5 rounded-3xl p-6 h-[400px] shadow-sm overflow-hidden relative group">
               {previewUrl ? (
-                <iframe src={`${previewUrl}#toolbar=0`} className="w-full h-full border-none rounded-xl" />
+                <iframe src={`${previewUrl}#toolbar=0`} className="w-full h-full border-none rounded-xl bg-white" />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-center p-8">
-                   <FileText className="w-16 h-16 text-primary/20 mb-4" />
-                   <p className="text-xs text-gray-500 dark:text-text-muted">{file?.name}</p>
+                <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50 dark:bg-white/5 rounded-xl">
+                   <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
+                   <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{file?.name || "Resume Preview"}</p>
                 </div>
               )}
-              <div className="absolute inset-0 bg-white/60 dark:bg-dark-bg/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
+              <div className="absolute inset-0 bg-white/80 dark:bg-[#121214]/80 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
                  <a href={previewUrl} download={file?.name}>
-                    <Button variant="primary">Download File</Button>
+                    <Button variant="primary" className="shadow-lg rounded-full px-6">Download Resume</Button>
                  </a>
               </div>
            </div>
@@ -625,35 +567,35 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
       </div>
 
       {/* Bottom Actions */}
-      <div className="flex flex-wrap justify-center gap-6 pt-8">
+      <div className="flex flex-wrap items-center justify-center gap-8 pt-6 pb-12">
         
         {/* Generate Cover Letter Button */}
         <div className="flex flex-col items-center gap-2">
           <button 
             onClick={handleGenerateCoverLetter} 
             disabled={isGeneratingCL}
-            className={`group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border transition-all shadow-xl
+            className={`group flex items-center justify-center gap-4 px-8 py-3.5 rounded-2xl transition-all
               ${isGeneratingCL 
-                ? 'bg-gray-100 dark:bg-surface/50 border-gray-200 dark:border-border cursor-not-allowed' 
-                : 'bg-primary/10 border-primary/30 hover:border-primary hover:bg-primary/20 hover:-translate-y-1'
+                ? 'bg-gray-100 dark:bg-white/5 cursor-not-allowed' 
+                : 'bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 active:scale-95'
               }`}
           >
             {isGeneratingCL ? (
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
             ) : (
-              <PenTool className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
+              <PenTool className="w-5 h-5 text-indigo-500" />
             )}
             <div className="text-left">
-              <span className="block text-sm font-bold text-gray-900 dark:text-text-main group-hover:text-primary transition-colors">
-                {isGeneratingCL ? "Generating AI Draft..." : "Write Cover Letter"}
+              <span className="block text-[15px] font-bold text-gray-900 dark:text-white">
+                {isGeneratingCL ? "Generating..." : "Write Cover Letter"}
               </span>
-              <span className="block text-[10px] uppercase tracking-widest text-gray-500 dark:text-text-muted mt-0.5">
+              <span className="block text-[10px] uppercase tracking-widest font-bold text-indigo-400 dark:text-indigo-300 mt-0.5">
                 Powered by Gemini
               </span>
             </div>
           </button>
           {clError && (
-            <span className="text-xs font-medium text-red-400 animate-in fade-in slide-in-from-top-1">
+            <span className="text-xs font-medium text-red-500">
               {clError}
             </span>
           )}
@@ -664,41 +606,43 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
           <button 
             onClick={handleExportPDF} 
             disabled={isExportingPDF}
-            aria-busy={isExportingPDF}
-            className={`group flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border transition-all shadow-xl
+            className={`group flex items-center justify-center gap-4 px-8 py-3.5 rounded-2xl transition-all
               ${isExportingPDF 
-                ? 'bg-gray-100 dark:bg-surface/50 border-gray-200 dark:border-border cursor-not-allowed' 
-                : 'bg-secondary/10 border-secondary/30 hover:border-secondary hover:bg-secondary/20 hover:-translate-y-1'
+                ? 'bg-gray-100 dark:bg-white/5 cursor-not-allowed' 
+                : 'bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 active:scale-95'
               }`}
           >
             {isExportingPDF ? (
-              <Loader2 className="w-6 h-6 text-secondary animate-spin" />
+              <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
             ) : (
-              <Download className="w-6 h-6 text-secondary group-hover:scale-110 transition-transform" />
+              <Download className="w-5 h-5 text-emerald-500" />
             )}
             <div className="text-left">
-              <span className="block text-sm font-bold text-gray-900 dark:text-text-main group-hover:text-secondary transition-colors">
+              <span className="block text-[15px] font-bold text-gray-900 dark:text-white">
                 {isExportingPDF ? "Exporting..." : "Export PDF"}
               </span>
-              <span className="block text-[10px] uppercase tracking-widest text-gray-500 dark:text-text-muted mt-0.5">
+              <span className="block text-[10px] uppercase tracking-widest font-bold text-emerald-400 dark:text-emerald-300 mt-0.5">
                 Download Feedback
               </span>
             </div>
           </button>
           {exportError && (
-            <span className="text-xs font-medium text-red-400 text-center" role="alert">
+            <span className="text-xs font-medium text-red-500 text-center">
               {exportError}
             </span>
           )}
         </div>
 
         {/* New Scan Button */}
-        <button onClick={onReset} className="group flex flex-col items-center gap-3 mt-1">
-          <div className="p-4 bg-white dark:bg-surface border border-gray-200 dark:border-border rounded-2xl group-hover:border-primary/50 group-hover:bg-primary/5 transition-all shadow-xl">
-            <Eye className="w-6 h-6 text-gray-500 dark:text-text-muted group-hover:text-primary transition-colors" />
-          </div>
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-500 dark:text-text-muted group-hover:text-primary">New Scan</span>
-        </button>
+        <div className="flex flex-col items-center gap-3 md:ml-12">
+          <button 
+            onClick={onReset} 
+            className="w-14 h-14 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"
+          >
+            <Eye className="w-6 h-6" />
+          </button>
+          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">New Scan</span>
+        </div>
       </div>
 
       <CoverLetterModal 

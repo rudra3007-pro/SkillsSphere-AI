@@ -1,7 +1,7 @@
-import Navbar from "../../shared/landing/Navbar.jsx";
+import Navbar from "../../shared/components/Navbar.jsx";
 import CTA from "./components/CTA";
 import Features from "./components/Features";
-import Footer from "./components/Footer";
+import Footer from "../../shared/components/Footer";
 import Hero from "./components/Hero";
 import TargetUsers from "./components/TargetUsers";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
