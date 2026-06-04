@@ -72,3 +72,27 @@ export const getRecommended = asyncHandler(async (req, res, next) => {
     data: result,
   });
 });
+
+/**
+ * Get a detailed match score between a job and the user's resume.
+ *
+ * @route GET /api/matching/detailed-score
+ */
+export const getDetailedScore = asyncHandler(async (req, res, next) => {
+  const { jobId } = req.query;
+  if (!jobId) {
+    return next(new AppError("jobId is required", 400));
+  }
+
+  const resume = await resumeService.getLatestResume(req.user._id, false);
+  if (!resume) {
+    return next(new AppError("No resume found. Please upload a resume first.", 404));
+  }
+
+  const result = await matchingService.getDetailedMatchScore(jobId, resume);
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+});

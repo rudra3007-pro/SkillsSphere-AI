@@ -8,6 +8,7 @@ import Footer from "../../../shared/components/Footer";
 import LoadingState from "../../../shared/components/LoadingState";
 import { JobViewerCard, Pagination } from "../../../shared/components";
 import JobApplyForm from "../../student-jobs/components/JobApplyForm";
+import CompareView from "../components/CompareView";
 import { applyToJob, getMyAppliedJobIds } from "../../student-jobs/services/jobService";
 import { getRecommendations } from "../services/matcherService";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
@@ -27,6 +28,8 @@ export default function JobMatcherPage() {
   const [applyingJobId, setApplyingJobId] = useState(null);
   const [applyModalJob, setApplyModalJob] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [showCompare, setShowCompare] = useState(false);
   const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
@@ -78,6 +81,11 @@ export default function JobMatcherPage() {
     } finally {
       setApplyingJobId(null);
     }
+  };
+
+  const handleCompare = (job) => {
+    setSelectedJob(job);
+    setShowCompare(true);
   };
 
   return (
@@ -153,6 +161,15 @@ export default function JobMatcherPage() {
               Browse All Jobs
             </button>
           </div>
+        ) : showCompare && selectedJob ? (
+          <CompareView
+            jobId={selectedJob._id || selectedJob.id}
+            resumeSource={user?._id}
+            onBack={() => {
+              setShowCompare(false);
+              setSelectedJob(null);
+            }}
+          />
         ) : (
           /* Recommendations found */
           <div>
