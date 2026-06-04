@@ -49,6 +49,9 @@ export default function readabilityEvaluator({ resumeText = "" }) {
 
   const allPowerVerbs = Object.values(powerVerbs).flat().map(v => v.toLowerCase());
 
+  const domainEarly = detectDomain(resumeText);
+  const relevantVerbsEarly = powerVerbs[domainEarly] ?? powerVerbs.general ?? [];
+
   const weakBullets = [];
   const passiveVoicePatterns = [
     /\b(?:is|are|was|were|be|been|being)\b\s+\b\w+ed\b/gi,
@@ -74,12 +77,14 @@ export default function readabilityEvaluator({ resumeText = "" }) {
       if (category === "bullet") {
         const severity = scoreWeakBulletSeverity(cleanedSentence);
         const section = extractBulletContext(sentence, resumeText);
+        const rewrite = buildRewriteSuggestion(cleanedSentence, relevantVerbsEarly);
         weakBullets.push({
           original: sentence,
           cleaned: cleanedSentence,
           reason: "No action verb in first 4 words",
           severity,
           section: section ?? "unknown",
+          suggestedRewrite: rewrite,
         });
       }
     }
@@ -108,6 +113,7 @@ export default function readabilityEvaluator({ resumeText = "" }) {
 
   if (highSeverity.length > 0) {
     suggestions.push(
+      `${highSeverity.length} high-severity weak bullets detected. Example rewrite: "${highSeverity[0].suggestedRewrite}"`
       `${highSeverity.length} high-severity weak bullets detected (e.g., 'Responsible for...').`
     );
   }
@@ -150,6 +156,7 @@ export default function readabilityEvaluator({ resumeText = "" }) {
         cleaned: b.cleaned,
         severity: b.severity,
         section: b.section,
+        suggestedRewrite: b.suggestedRewrite,
         reason: b.reason,
       })),
       weakBulletCount: weakBullets.length,
