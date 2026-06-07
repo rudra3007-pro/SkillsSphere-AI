@@ -79,7 +79,7 @@ export const endSession = async (roomId, hostId) => {
   }
 
   // Capture final artifacts from memory state
-  const finalState = getRoomState(roomId);
+  const finalState = await getRoomState(roomId);
   if (finalState) {
     session.chatHistory = finalState.chatHistory || [];
     session.codeSnapshot = finalState.code || "";
@@ -90,7 +90,7 @@ export const endSession = async (roomId, hostId) => {
   await session.save();
 
   // Clear in-memory room state to prevent memory leaks
-  clearRoomState(roomId);
+  await clearRoomState(roomId);
 
   return session;
 };
