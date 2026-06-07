@@ -130,6 +130,8 @@ export const serveAvatar = asyncHandler(async (req, res, next) => {
   if (!avatarOwner) {
     return next(new AppError("File not found", 404));
   }
+  // Avatar images are profile pictures — accessible to any authenticated user
+  // as they appear in public-facing UI (classroom, recruiter views, etc.)
 
   if (!sendFileIfExists(res, resolved.absolutePath, resolved.safeName)) {
     return next(new AppError("File not found", 404));
