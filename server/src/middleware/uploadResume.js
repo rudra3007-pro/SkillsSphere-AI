@@ -48,8 +48,8 @@ export const fileFilter = (_req, file, cb) => {
     return cb(traversalError, false);
   }
 
-  // Verify both extension and MIME type map correctly
-  if (hasAllowedExtension && hasAllowedMimeType) {
+  // Verify extension is allowed (mimetype check is performed as content validation downstream)
+  if (hasAllowedExtension) {
     cb(null, true);
   } else {
     const typeError = new Error("Only PDF, DOC, DOCX, and TXT files are allowed");
@@ -204,7 +204,7 @@ export const validateAndPersistResumeFile = asyncHandler(async (req, res, next) 
     // Clear the memory reference to aid Garbage Collection
     req.file = undefined; 
     
-    return res.status(415).json({
+    return res.status(400).json({
       success: false,
       message: signatureCheck.message || "The uploaded file failed content validation. Please upload a genuine PDF, DOC, DOCX, or TXT file.",
     });

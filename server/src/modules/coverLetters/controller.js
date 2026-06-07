@@ -26,6 +26,9 @@ export const getCoverLetters = asyncHandler(async (req, res, next) => {
 res.status(200).json({
   success: true,
   count: coverLetters.length,
+  totalCount,
+  totalPages: Math.ceil(totalCount / limit),
+  currentPage: page,
   data: coverLetters,
   pagination: {
     total: totalCount,
