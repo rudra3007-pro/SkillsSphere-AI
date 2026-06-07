@@ -12,23 +12,19 @@ validateEnv();
 setupGlobalLogSanitizer();
 
 
-// Trigger nodemon restart!!!!!
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import http from "http";
 import { Server } from "socket.io";
-import swaggerUi from "swagger-ui-express";
 import { logEvaluatorConfig } from "./src/config/evaluatorConfig.js";
 import redisClient, { connectRedis } from "./src/config/redis.js";
 // import swaggerSpec from "./src/config/swaggerConfig.js";
 import connectDB, { isConnected } from "./src/database/db.js";
-import { protect, verifySocketToken } from "./src/middleware/authMiddleware.js";
+import { verifySocketToken } from "./src/middleware/authMiddleware.js";
 import globalErrorHandler from "./src/middleware/errorMiddleware.js";
 import { globalLimiter } from "./src/middleware/rateLimiter.js";
 import requireDB from "./src/middleware/requireDB.js";
 import {
   SOCKET_AUTH_ERROR_CODES,
   createSocketAuthError,
-  getSocketAuthErrorMessage,
 } from "./src/middleware/socketAuthError.js";
 import analyticsRoutes from "./src/modules/analytics/routes.js";
 import authRoutes from "./src/modules/auth/routes.js";
@@ -185,48 +181,14 @@ globalThis.__REDIS_READY__ = didConnectRedis;
 
 logEvaluatorConfig();
 
-
-
-// Initialize Gemini AI client logic moved to src/modules/ai-assistant/controller.js
-
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
     db: isConnected ? "connected" : "disconnected",
     redis: globalThis.__REDIS_READY__ ? "connected" : "disconnected",
-
   });
 });
 
-// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-app.post("/api/chat", protect, async (req, res, next) => {
-  try {
-    const { message } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: "Message required" });
-    }
-
-    if (!geminiModel) {
-      return res.status(503).json({
-        error:
-          "AI service is currently unconfigured. Please set GEMINI_API_KEY in .env",
-      });
-    }
-
-    const prompt = `You are the "SkillsSphere Career Assistant", an expert AI specializing in tech careers, resumes, recruitment, and technical interviews. 
-Keep your answers concise, helpful, and professional. If the user asks something completely unrelated to careers or the platform, politely decline to answer.
-User message: ${message}`;
-
-    const result = await geminiModel.generateContent(prompt);
-    const reply = result.response.text();
-
-    res.json({ reply });
-  } catch (error) {
-    logger.error("Chat API error:", error);
-    next(error);
-  }
-});
 
 
 app.use("/api/auth", requireDB, authRoutes);
