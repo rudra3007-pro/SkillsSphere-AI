@@ -185,50 +185,47 @@ const globalErrorHandler = (err, req, res, next) => {
   if (error.name === "ValidationError") error = handleValidationErrorDB(error);
   
   // Handle AI errors (Gemini/Google Generative AI + AI-specific Axios errors)
-  // IMPORTANT: Do NOT classify AI errors solely by message text (e.g. "google"),
-  // otherwise non-AI operational errors containing these words get misclassified.
+  // IMPORTANT: Avoid misclassification of non-AI Axios errors.
   //
-  // IMPORTANT FIX: Do NOT classify all Axios errors as AI.
-  // `error.isAxiosError === true` can be true for operational failures to non-AI upstream services.
-  const url = typeof error?.config?.url === "string" ? error.config.url : "";
-  const aiUrlHints = [
-    // Google / Gemini endpoints (best-effort allowlist)
-    "generativelanguage.googleapis.com",
-    "googleapis.com",
-    "/v1beta/models",
-    "/v1/models",
-    // Some SDKs/clients may use a custom base URL that still includes these hints.
-    "gemini",
-    "generative",
-    // OpenAI (if used elsewhere in the app)
-    "api.openai.com",
-    "chat/completions",
-    "responses",
-  ];
-  const isAiAxiosError = Boolean(
-    error.isAxiosError &&
-      (aiUrlHints.some((hint) => url.toLowerCase().includes(hint)) ||
-        // Secondary check: provider header / type hints if present.
-        (typeof error?.config?.headers === "object" &&
-          (Object.keys(error.config.headers)
-            .join(" ")
-            .toLowerCase()
-            .includes("goog") ||
-            Object.keys(error.config.headers)
-              .join(" ")
-              .toLowerCase()
-              .includes("gemini"))))
-  );
+  // This handler classifies AI failures ONLY when:
+  //  1) The failing request is explicitly tagged with header `x-ai-provider`, or
+  //  2) The error is a strongly-typed AI SDK error (e.g. GoogleGenerativeAI).
+  //
+  // It intentionally does NOT use URL substring heuristics (e.g. googleapis.com / gemini).
 
-  if (
-    isAiAxiosError ||
-    error.type === "invalid_request_error" ||
-    error?.name === "GoogleGenerativeAI" ||
-    error?.provider === "google" ||
-    (typeof error?.status === "number" &&
-      // Gate status-based heuristics behind known AI/provider identifiers.
-      (error?.name === "GoogleGenerativeAI" || error?.provider === "google"))
-  ) {
+  const headers = error?.config?.headers;
+  const headerObj = headers && typeof headers === "object" ? headers : {};
+  const headerKeysLower = Object.keys(headerObj).reduce((acc, k) => {
+    acc[k.toLowerCase()] = headerObj[k];
+    return acc;
+  }, {});
+
+  const aiProvider =
+    headerKeysLower["x-ai-provider"] ??
+    headerKeysLower["x-ai_provider"] ??
+    headerKeysLower["x-ai-client"] ??
+    headerKeysLower["x-ai_client"];
+
+  const normalizedProvider =
+    typeof aiProvider === "string" ? aiProvider.trim().toLowerCase() : "";
+
+  const allowedProviders = new Set([
+    // Current module uses Gemini
+    "gemini",
+    // Reserve common providers for future integrations
+    "openai",
+    "anthropic",
+    "google",
+    "google-generative-ai",
+  ]);
+
+  const isTaggedAiAxiosError =
+    error.isAxiosError && normalizedProvider && allowedProviders.has(normalizedProvider);
+
+  // Also allow strongly-typed AI SDK errors (no URL/message heuristics)
+  const isTypedGeminiSdkError = error?.name === "GoogleGenerativeAI";
+
+  if (isTaggedAiAxiosError || isTypedGeminiSdkError) {
     error = handleAIError(error);
   }
 
