@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useEffect } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 const ToastContext = createContext(null);
@@ -53,6 +53,19 @@ export const ToastProvider = ({ children }) => {
       removeToast(id);
     }, TOAST_DURATION);
   }, [removeToast]);
+
+  useEffect(() => {
+    const handleApiError = (event) => {
+      // Don't show generic unauthorized messages if we're handling 401 specifically
+      // or if it's already being handled by the router.
+      if (event.detail?.status === 401) return;
+      
+      showToast("error", event.detail?.message || "An unexpected error occurred", "Error");
+    };
+
+    window.addEventListener("api:error", handleApiError);
+    return () => window.removeEventListener("api:error", handleApiError);
+  }, [showToast]);
 
   const value = useMemo(
     () => ({
