@@ -18,13 +18,11 @@ function matchesAlias(skill, text) {
   return aliases.some((alias) => text.includes(alias));
 }
 
-// --- Compute domain coverage ratio ---
 function domainCoverage(matches, total) {
   if (total === 0) return 0;
   return parseFloat((matches / total).toFixed(2));
 }
 
-// --- Classify domain proficiency ---
 function classifyProficiency(coverage) {
   if (coverage >= 0.7) return "expert";
   if (coverage >= 0.4) return "proficient";
@@ -72,7 +70,6 @@ export const techStandardEvaluator = ({ resumeText = "" }) => {
   );
 
   // --- Weighted score ---
-  // Expert domain = 25pts, Proficient = 15pts, Beginner = 5pts, capped at 100
   let score = 0;
   Object.keys(domainProficiency).forEach((d) => {
     if (domainProficiency[d] === "expert") score += 25;
@@ -100,7 +97,7 @@ export const techStandardEvaluator = ({ resumeText = "" }) => {
     );
   }
 
-  // --- Per-domain missing skill hints (top 3 per domain) ---
+  // --- Per-domain missing skill hints ---
   Object.keys(domainMissing).forEach((domain) => {
     if (
       domainMatches[domain].length > 0 &&
