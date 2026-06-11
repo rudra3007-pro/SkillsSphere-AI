@@ -238,6 +238,7 @@ const globalErrorHandler = (err, req, res, next) => {
 
   if (isTaggedAiAxiosError || isTypedGeminiSdkError) {
     error = handleAIError(error);
+    error.statusCode = error.statusCode ?? 503;
   }
 
 
