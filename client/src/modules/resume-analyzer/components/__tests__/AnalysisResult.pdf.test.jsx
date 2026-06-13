@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AnalysisResult from "../AnalysisResult";
-import { exportToPDF } from "../../../../utils/exportUtils";
+import {
+  exportResumeAnalysisToJSON,
+  exportResumeAnalysisToTXT,
+  exportToPDF,
+} from "../../../../utils/exportUtils";
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),
@@ -12,6 +16,8 @@ const toast = vi.hoisted(() => ({
 
 vi.mock("../../../../utils/exportUtils", () => ({
   exportToPDF: vi.fn(),
+  exportResumeAnalysisToTXT: vi.fn(),
+  exportResumeAnalysisToJSON: vi.fn(),
 }));
 
 vi.mock("../../../../shared/components", () => ({
@@ -112,6 +118,32 @@ describe("AnalysisResult PDF export", () => {
 
     expect(screen.getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
     expect(document.getElementById("analysis-report-pdf")).toBeInTheDocument();
+  });
+
+  it("shows TXT and JSON export buttons", () => {
+    renderAnalysis();
+
+    expect(screen.getByRole("button", { name: /export txt/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /export json/i })).toBeInTheDocument();
+  });
+
+  it("clicking TXT and JSON export buttons uses the reusable export helpers", async () => {
+    const user = userEvent.setup();
+    renderAnalysis();
+
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /export txt/i }));
+      await user.click(screen.getByRole("button", { name: /export json/i }));
+    });
+
+    expect(exportResumeAnalysisToTXT).toHaveBeenCalledWith(
+      analysisResult,
+      "Aarav Resume-analysis-report.txt",
+    );
+    expect(exportResumeAnalysisToJSON).toHaveBeenCalledWith(
+      analysisResult,
+      "Aarav Resume-analysis-report.json",
+    );
   });
 
   it("clicking export triggers PDF generation with a clean filename", async () => {

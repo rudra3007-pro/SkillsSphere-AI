@@ -119,8 +119,16 @@ describe("Classroom Background Sweeper (Clustered & Single Node)", () => {
 
     await sweeperCallback();
 
+    // Verify lock was acquired (acquire called on the room-1 lock)
     assert.equal(acquireCalls.length, 1);
+
+    // Verify fresh session was loaded under lock
     assert.equal(ClassroomSession.findOne.mock.calls.length, 1);
+    assert.deepEqual(ClassroomSession.findOne.mock.calls[0].arguments[0], {
+      roomId: "room-1",
+      status: "active"
+    });
+
     assert.ok(mockSession.emptySince instanceof Date);
     assert.equal(mockSession.save.mock.calls.length, 1);
     assert.equal(lockReleased, true);
@@ -129,7 +137,7 @@ describe("Classroom Background Sweeper (Clustered & Single Node)", () => {
   it("should end session and clear locks/state when empty longer than grace period (single node)", async () => {
     initClassroomSockets(mockIo);
 
-    const oldDate = new Date(Date.now() - 40000);
+    const oldDate = new Date(Date.now() - 40000); // 40s ago (cutoff is 30s)
     const mockSession = {
       _id: "session-2",
       roomId: "room-2",
@@ -151,6 +159,7 @@ describe("Classroom Background Sweeper (Clustered & Single Node)", () => {
     assert.ok(mockSession.endedAt instanceof Date);
     assert.equal(mockSession.save.mock.calls.length, 1);
 
+    // Verify room lock was cleared (a new getRoomLock should return a different Mutex object)
     const secondLock = getRoomLock("room-2");
     assert.notEqual(firstLock, secondLock);
     assert.equal(lockReleased, true);
@@ -159,7 +168,7 @@ describe("Classroom Background Sweeper (Clustered & Single Node)", () => {
   it("should reset emptySince and prune inactive participants if sockets are active (single node)", async () => {
     initClassroomSockets(mockIo);
 
-    activeSockets = [{ id: "socket-1" }];
+    activeSockets = [{ id: "socket-1" }]; // socket-1 is active, socket-stale is gone
 
     const mockSession = {
       _id: "session-3",
@@ -279,6 +288,25 @@ describe("Classroom Background Sweeper (Clustered & Single Node)", () => {
     assert.ok(retainedSocketIds.includes("socket-remote"));
     assert.ok(!retainedSocketIds.includes("socket-dead-ghost"));
     assert.equal(mockSession.save.mock.calls.length, 1);
+    assert.equal(lockReleased, true);
+  });
+
+  it("should gracefully handle and release lock if session is concurrently ended/not found in findOne", async () => {
+    initClassroomSockets(mockIo);
+
+    const mockSession = {
+      _id: "session-4",
+      roomId: "room-4",
+      status: "active"
+    };
+
+    mock.method(ClassroomSession, "find", async () => [mockSession]);
+    // FindOne returns null because it was concurrently ended/deleted
+    mock.method(ClassroomSession, "findOne", async () => null);
+
+    await sweeperCallback();
+
+    assert.equal(ClassroomSession.findOne.mock.calls.length, 1);
     assert.equal(lockReleased, true);
   });
 });

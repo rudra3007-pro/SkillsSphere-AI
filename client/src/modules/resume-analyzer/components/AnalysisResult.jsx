@@ -23,7 +23,11 @@ import CoverLetterModal from "../../../shared/components/CoverLetterModal";
 import { generateCoverLetter } from "../services/resumeService";
 import AnalysisReportPDF from "./AnalysisReportPDF";
 import { useToast } from "../../../shared/components";
-import { exportToPDF } from "../../../utils/exportUtils";
+import {
+  exportResumeAnalysisToJSON,
+  exportResumeAnalysisToTXT,
+  exportToPDF,
+} from "../../../utils/exportUtils";
 
 import logger from "../../../utils/logger";
 
@@ -205,6 +209,9 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
   // --- Action Words ---
   const actionWords = result.readabilityMatch?.relevantVerbs || ["Spearheaded", "Orchestrated", "Transformed", "Optimized", "Architected", "Launched", "Pioneered", "Revitalized"];
   const atsScoreBreakdown = buildAtsScoreBreakdown(result, score);
+  const fileNameClean = file?.name
+    ? file.name.replace(/\.[^/.]+$/, "")
+    : "resume-analysis";
 
   const handleExportPDF = async () => {
     if (isExportingPDF) return;
@@ -212,10 +219,6 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
     setIsExportingPDF(true);
     setExportError("");
     try {
-      const fileNameClean = file?.name 
-        ? file.name.replace(/\.[^/.]+$/, "") 
-        : "resume-analysis";
-
       await exportToPDF("analysis-report-pdf", `${fileNameClean}-analysis-report.pdf`, {
         margin: [0.4, 0.4, 0.4, 0.4],
         image: { type: "jpeg", quality: 0.98 },
@@ -231,6 +234,16 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
     } finally {
       setIsExportingPDF(false);
     }
+  };
+
+  const handleExportTXT = () => {
+    exportResumeAnalysisToTXT(result, `${fileNameClean}-analysis-report.txt`);
+    success("Report exported to TXT successfully.");
+  };
+
+  const handleExportJSON = () => {
+    exportResumeAnalysisToJSON(result, `${fileNameClean}-analysis-report.json`);
+    success("Report exported to JSON successfully.");
   };
 
   const handleGenerateCoverLetter = async () => {
@@ -606,6 +619,7 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
           <button 
             onClick={handleExportPDF} 
             disabled={isExportingPDF}
+            aria-busy={isExportingPDF}
             className={`group flex items-center justify-center gap-4 px-8 py-3.5 rounded-2xl transition-all
               ${isExportingPDF 
                 ? 'bg-gray-100 dark:bg-white/5 cursor-not-allowed' 
@@ -627,10 +641,46 @@ const AnalysisResult = ({ result, file, jobDescription, onReset }) => {
             </div>
           </button>
           {exportError && (
-            <span className="text-xs font-medium text-red-500 text-center">
+            <span role="alert" className="text-xs font-medium text-red-500 text-center">
               {exportError}
             </span>
           )}
+        </div>
+
+        {/* Export TXT Report Button */}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={handleExportTXT}
+            className="group flex items-center justify-center gap-4 px-8 py-3.5 rounded-2xl bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 active:scale-95 transition-all"
+          >
+            <FileText className="w-5 h-5 text-sky-500" />
+            <div className="text-left">
+              <span className="block text-[15px] font-bold text-gray-900 dark:text-white">
+                Export TXT
+              </span>
+              <span className="block text-[10px] uppercase tracking-widest font-bold text-sky-400 dark:text-sky-300 mt-0.5">
+                Plain Summary
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {/* Export JSON Report Button */}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={handleExportJSON}
+            className="group flex items-center justify-center gap-4 px-8 py-3.5 rounded-2xl bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-100 dark:hover:bg-violet-500/20 active:scale-95 transition-all"
+          >
+            <Download className="w-5 h-5 text-violet-500" />
+            <div className="text-left">
+              <span className="block text-[15px] font-bold text-gray-900 dark:text-white">
+                Export JSON
+              </span>
+              <span className="block text-[10px] uppercase tracking-widest font-bold text-violet-400 dark:text-violet-300 mt-0.5">
+                Structured Data
+              </span>
+            </div>
+          </button>
         </div>
 
         {/* New Scan Button */}

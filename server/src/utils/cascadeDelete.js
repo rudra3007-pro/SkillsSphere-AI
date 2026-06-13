@@ -31,8 +31,18 @@ export const cascadeDeleteUser = async (userId) => {
     return;
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const client = mongoose.connection?.client;
+  const topologyType = client?.topology?.description?.type;
+  const useTransaction = topologyType && (
+    topologyType.includes("ReplicaSet") ||
+    topologyType === "Sharded" ||
+    (client?.topology?.description?.servers && client.topology.description.servers.size > 1)
+  );
+
+  const session = useTransaction ? await mongoose.startSession() : null;
+  if (session) {
+    session.startTransaction();
+  }
 
   let resumes = [];
   let interviewSessions = [];
@@ -130,13 +140,19 @@ await LearningProgress.updateMany(
     // 6. Delete User document itself
     await User.findByIdAndDelete(userId, { session });
 
-    await session.commitTransaction();
+    if (session) {
+      await session.commitTransaction();
+    }
   } catch (error) {
-    await session.abortTransaction();
+    if (session) {
+      await session.abortTransaction();
+    }
     logger.error("Transaction aborted in cascadeDeleteUser:", error);
     throw error;
   } finally {
-    session.endSession();
+    if (session) {
+      session.endSession();
+    }
   }
 
   // 1. Delete profile picture from Cloudinary, or from disk for legacy local avatars.
