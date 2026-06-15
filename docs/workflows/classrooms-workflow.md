@@ -20,7 +20,7 @@ Traditional remote learning often suffers from tool fragmentation—students and
 - Implements native Picture-in-Picture (PiP) support for persistent media visibility across different workspaces.
 
 **What the Module Deliberately Avoids:**
-- **Centralized Media Routing (SFU/MCU)**: To maintain a zero-cost infrastructure footprint for media, all video/audio streams are routed strictly P2P. This enforces a soft cap on room sizes (optimally 5-8 participants) before client-side CPU/bandwidth bottlenecks occur.
+- **Centralized Media Routing (SFU/MCU)**: To maintain a zero-cost infrastructure footprint for media, all video/audio streams are routed strictly P2P. Recent infrastructure upgrades now support larger room capacities, enforcing a cap on room sizes (optimally 30 participants, max 100) before client-side CPU/bandwidth bottlenecks occur.
 - **Persistent Media Storage**: The platform does not record or persist video/audio streams. All media data is inherently ephemeral.
 
 ---
@@ -116,43 +116,55 @@ const mongoose = require('mongoose');
 const classroomSessionSchema = new mongoose.Schema({
   roomId: { 
     type: String, 
-    required: true, 
+    required: [true, "Room ID is required"], 
     unique: true,
     index: true 
   },
-  hostId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true,
-    index: true
-  },
   title: { 
     type: String, 
-    default: 'Live Session' 
+    required: [true, "Session title is required"], 
+    trim: true,
+    maxlength: [100, "Session title cannot exceed 100 characters"]
+  },
+  subject: {
+    type: String,
+    trim: true,
+    maxlength: [100, "Subject cannot exceed 100 characters"],
+    default: "",
+  },
+  host: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: [true, "Host reference is required"],
+    index: true
   },
   status: { 
     type: String, 
-    enum: ['active', 'ended', 'aborted'], 
-    default: 'active' 
+    enum: ['active', 'ended'], 
+    default: 'active',
+    index: true
   },
-  participants: [{
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    joinedAt: { type: Date, default: Date.now },
-    leftAt: { type: Date }
+  maxParticipants: {
+    type: Number,
+    default: 30,
+    min: [2, "A session must allow at least 2 participants"],
+    max: [100, "A session cannot exceed 100 participants"]
+  },
+  chatHistory: [{
+    sender: { type: Object },
+    message: { type: String },
+    timestamp: { type: String }
   }],
-  settings: {
-    maxParticipants: { type: Number, default: 10 },
-    allowScreenShare: { type: Boolean, default: true },
-    requireApproval: { type: Boolean, default: false }
-  },
-  startedAt: { type: Date, default: Date.now },
-  endedAt: { type: Date }
-}, { 
-  timestamps: true 
-});
-
-// Compound index for querying active sessions by host
-classroomSessionSchema.index({ hostId: 1, status: 1 });
+  codeSnapshot: { type: String, default: "" },
+  whiteboardSnapshot: { type: Array, default: [] },
+  participants: [{
+    socketId: { type: String, required: true },
+    user: { type: Object, required: true },
+    joinedAt: { type: Date, default: Date.now }
+  }],
+  endedAt: { type: Date, default: null },
+  emptySince: { type: Date, default: null }
+}, { timestamps: true });
 
 module.exports = mongoose.model('ClassroomSession', classroomSessionSchema);
 ```
