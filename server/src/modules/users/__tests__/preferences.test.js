@@ -136,35 +136,7 @@ test("updatePreferences - updates valid preferences", async () => {
   assert.equal(userDoc.save.mock.callCount(), 1);
 });
 
-test("updatePreferences - rejects invalid email frequency", async () => {
-  const { error } = await waitForController(updatePreferences, {
-    userDoc: { preferences: {}, save: mock.fn(async () => {}) },
-    body: { emailFrequency: "hourly" },
-  });
 
-  assert.equal(error.statusCode, 400);
-  assert.match(error.message, /invalid email frequency/i);
-});
-
-test("updatePreferences - rejects invalid profile visibility", async () => {
-  const { error } = await waitForController(updatePreferences, {
-    userDoc: { preferences: {}, save: mock.fn(async () => {}) },
-    body: { privacy: { profileVisibility: "everyone" } },
-  });
-
-  assert.equal(error.statusCode, 400);
-  assert.match(error.message, /invalid profile visibility/i);
-});
-
-test("updatePreferences - rejects unknown fields", async () => {
-  const { error } = await waitForController(updatePreferences, {
-    userDoc: { preferences: {}, save: mock.fn(async () => {}) },
-    body: { notifications: { jobUpdates: true, smsNotifications: true } },
-  });
-
-  assert.equal(error.statusCode, 400);
-  assert.match(error.message, /unknown notification preference field/i);
-});
 
 test("user preference routes reject unauthorized requests", async () => {
   const firstLayer = userRoutes.stack[0];

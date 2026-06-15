@@ -275,7 +275,7 @@ export const useInterviewState = (sessionId, isObserver) => {
   const toggleCurrentQuestionBookmark = async () => {
     if (!currentQuestion?.questionId || bookmarking) return;
 
-    const nextBookmarked = !Boolean(currentQuestion.bookmarked);
+    const nextBookmarked = !currentQuestion.bookmarked;
     const previousQuestion = currentQuestion;
 
     setBookmarking(true);

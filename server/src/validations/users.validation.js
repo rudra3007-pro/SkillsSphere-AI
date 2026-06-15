@@ -40,6 +40,11 @@ const companyWebsiteSchema = z
   .refine(isValidCompanyWebsite, "Invalid URL")
   .optional();
 
+export const onboardUserSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  role: z.enum(['student', 'tutor', 'recruiter']),
+});
+
 export const updateProfileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
   role: z.string().optional(),

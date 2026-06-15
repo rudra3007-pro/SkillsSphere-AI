@@ -62,7 +62,7 @@ const InterviewResults = () => {
   const handleBookmarkToggle = async (answer) => {
     if (!answer?.questionId || bookmarkingQuestionId) return;
 
-    const nextBookmarked = !Boolean(answer.bookmarked);
+    const nextBookmarked = !answer.bookmarked;
     setBookmarkingQuestionId(answer.questionId);
     setBookmarkError(null);
     setResults((currentResults) => ({

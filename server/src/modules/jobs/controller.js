@@ -78,38 +78,7 @@ export const createJobPosting = asyncHandler(async (req, res) => {
     keywords,
   } = req.body;
 
-  // Validate required fields with detailed errors
-  const validationErrors = {};
-  if (!title) validationErrors.title = "Job title is required";
-  if (!description) validationErrors.description = "Job description is required";
-  if (!skills || (Array.isArray(skills) && skills.length === 0)) {
-    validationErrors.skills = "At least one skill is required";
-  }
-  if (!location) {
-    validationErrors.location = "Location is required";
-  } else {
-    if (!location.city) validationErrors["location.city"] = "City is required";
-    if (!location.state) validationErrors["location.state"] = "State is required";
-  }
-  if (!salary) {
-    validationErrors.salary = "Salary information is required";
-  } else {
-    if (salary.min === undefined || salary.min === null) {
-      validationErrors["salary.min"] = "Minimum salary is required";
-    }
-    if (salary.max === undefined || salary.max === null) {
-      validationErrors["salary.max"] = "Maximum salary is required";
-    }
-    if (salary.min !== undefined && salary.max !== undefined && salary.min > salary.max) {
-      validationErrors["salary.max"] = "Maximum salary must be greater than or equal to minimum";
-    }
-  }
 
-  if (Object.keys(validationErrors).length > 0) {
-    const error = new AppError("Please provide all required fields", 400);
-    error.errors = validationErrors;
-    throw error;
-  }
 
   // Create job posting with recruiter from authenticated user
   const jobPosting = await JobPosting.create({

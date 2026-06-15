@@ -1,7 +1,7 @@
 import express from "express";
 import { protect } from "../../middleware/authMiddleware.js";
 import { validateBody } from "../../middleware/validation.js";
-import { updateProfileSchema, updatePreferencesSchema } from "../../validations/users.validation.js";
+import { onboardUserSchema, updateProfileSchema, updatePreferencesSchema } from "../../validations/users.validation.js";
 import { uploadAvatarMiddleware } from "../../middleware/uploadAvatar.js";
 import {
   updateProfile,
@@ -18,7 +18,7 @@ const router = express.Router();
 router.use(protect);
 
 // 🚀 Onboard User
-router.put("/onboard", validateBody(updateProfileSchema), onboardUser);
+router.put("/onboard", validateBody(onboardUserSchema), onboardUser);
 
 router.get("/preferences", getPreferences);
 router.put("/preferences", validateBody(updatePreferencesSchema), updatePreferences);

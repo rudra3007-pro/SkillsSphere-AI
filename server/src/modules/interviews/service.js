@@ -492,7 +492,7 @@ export const updateQuestionBookmark = async ({
   }
 
   answer.bookmarked =
-    typeof bookmarked === "boolean" ? bookmarked : !Boolean(answer.bookmarked);
+    typeof bookmarked === "boolean" ? bookmarked : !answer.bookmarked;
 
   await session.save({ validateModifiedOnly: true });
 
