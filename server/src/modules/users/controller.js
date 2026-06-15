@@ -185,11 +185,18 @@ export const updatePreferences = asyncHandler(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
-  let preferences;
-  try {
-    preferences = validateAndMergePreferences(user.preferences, req.body);
-  } catch (error) {
-    return next(error);
+  let preferences = mergePreferencesWithDefaults(user.preferences);
+  
+  // Since validateBody(updatePreferencesSchema) already stripped unknown keys and validated types,
+  // we can safely merge req.body.
+  if (req.body.notifications) {
+    preferences.notifications = { ...preferences.notifications, ...req.body.notifications };
+  }
+  if (req.body.emailFrequency) {
+    preferences.emailFrequency = req.body.emailFrequency;
+  }
+  if (req.body.privacy) {
+    preferences.privacy = { ...preferences.privacy, ...req.body.privacy };
   }
 
   user.preferences = preferences;
@@ -209,15 +216,6 @@ export const updatePreferences = asyncHandler(async (req, res, next) => {
  */
 export const onboardUser = asyncHandler(async (req, res, next) => {
   const { name, role } = req.body;
-
-  if (!name || name.trim().length < 2) {
-    return next(new AppError("Please provide a valid name (at least 2 characters)", 400));
-  }
-
-  const allowedRoles = ["student", "tutor", "recruiter"];
-  if (!role || !allowedRoles.includes(role)) {
-    return next(new AppError("Please select a valid role", 400));
-  }
 
   const accessLevel = (role === "recruiter" || role === "tutor") ? "pending" : "full";
 
@@ -250,13 +248,10 @@ export const onboardUser = asyncHandler(async (req, res, next) => {
  */
 export const updateProfile = asyncHandler(async (req, res, next) => {
   const { name, company, companyWebsite, linkedinUrl, credentialUrl } = req.body;
-
-
-  if (!name || name.trim().length < 2) {
-    return next(new AppError("Please provide a valid name (at least 2 characters)", 400));
+  const updateData = {};
+  if (name !== undefined) {
+    updateData.name = name.trim();
   }
-
-  const updateData = { name: name.trim() };
 
   // Handle linkedinUrl and credentialUrl for recruiter and tutor roles
   if (req.user.role === "recruiter" || req.user.role === "tutor") {

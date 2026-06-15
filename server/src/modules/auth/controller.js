@@ -1,11 +1,3 @@
-import {
-  validateForgotPasswordInput,
-  validateLoginInput,
-  validateRegisterInput,
-  validateResendOTPInput,
-  validateResetPasswordInput,
-  validateVerifyEmailInput,
-} from "../../validations/authValidation.js";
 
 import {
   exchangeAuthCodeForToken,
@@ -316,13 +308,7 @@ export const initiateGoogleOAuth = (req, res) => {
 
 // 📝 Register User
 export const register = asyncHandler(async (req, res, next) => {
-  const validation = validateRegisterInput(req.body);
-
-  if (!validation.isValid) {
-    return next(new AppError("Invalid registration payload", 400));
-  }
-
-  const authResult = await registerUserAndIssueToken(validation.data);
+  const authResult = await registerUserAndIssueToken(req.body);
 
   return res.status(201).json({
     success: true,
@@ -335,15 +321,9 @@ export const register = asyncHandler(async (req, res, next) => {
 
 // 📧 Verify Email
 export const verifyEmail = asyncHandler(async (req, res, next) => {
-  const validation = validateVerifyEmailInput(req.body);
-
-  if (!validation.isValid) {
-    return next(new AppError("Invalid verification data", 400));
-  }
-
   const { user } = await verifyUserEmail(
-    validation.data.email,
-    validation.data.otp,
+    req.body.email,
+    req.body.otp,
   );
 
   const token = jwt.sign(
@@ -375,28 +355,16 @@ export const verifyEmail = asyncHandler(async (req, res, next) => {
 
 // 🔑 Forgot Password
 export const forgotPassword = asyncHandler(async (req, res, next) => {
-  const validation = validateForgotPasswordInput(req.body);
-
-  if (!validation.isValid) {
-    return next(new AppError("Invalid email address", 400));
-  }
-
-  const result = await forgotPasswordRequest(validation.data.email);
+  const result = await forgotPasswordRequest(req.body.email);
   return res.status(200).json(result);
 });
 
 // 🔄 Reset Password
 export const resetPassword = asyncHandler(async (req, res, next) => {
-  const validation = validateResetPasswordInput(req.body);
-
-  if (!validation.isValid) {
-    return next(new AppError("Invalid reset data", 400));
-  }
-
   const result = await resetUserPassword(
-    validation.data.email,
-    validation.data.otp,
-    validation.data.newPassword,
+    req.body.email,
+    req.body.otp,
+    req.body.newPassword,
   );
 
   return res.status(200).json(result);
@@ -404,26 +372,14 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
 
 // 🔁 Resend OTP
 export const resendOTP = asyncHandler(async (req, res, next) => {
-  const validation = validateResendOTPInput(req.body);
-
-  if (!validation.isValid) {
-    return next(new AppError("Invalid email address", 400));
-  }
-
-  const result = await resendUserOTP(validation.data.email);
+  const result = await resendUserOTP(req.body.email);
   return res.status(200).json(result);
 });
 
 export const login = asyncHandler(async (req, res, next) => {
-  const validation = validateLoginInput(req.body);
-
-  if (!validation.isValid) {
-    return next(new AppError("Invalid login payload", 400));
-  }
-
   const result = await loginUser(
-    validation.data.email,
-    validation.data.password,
+    req.body.email,
+    req.body.password,
   );
 
   return res.status(200).json({
