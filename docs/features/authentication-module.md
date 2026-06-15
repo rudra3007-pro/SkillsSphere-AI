@@ -40,31 +40,32 @@ sequenceDiagram
     participant DB as MongoDB
 
     User->>FE: Clicks "Continue with Google"
-    FE->>BE: GET /api/auth/google/url
+    FE->>BE: GET /api/auth/google/url?action=signup&role=student
 
-    Note over BE: Generate CSRF State Token
-    BE->>BE: crypto.randomBytes(32)
-    BE->>BE: Set 'oauth_state' HttpOnly Cookie
+    Note over BE: Generate CSRF State Token with Payload
+    BE->>BE: Encode and encrypt { action: 'signup', role: 'student', csrfToken } into 'state'
+    BE->>BE: Set 'oauth_state' HttpOnly Cookie with raw csrfToken
     BE-->>FE: Return Google Auth URL
 
     FE->>IdP: Redirect User to Google
     User->>IdP: Grants Permission
-    IdP->>BE: Redirect to /api/auth/google/callback?code=XYZ&state=ABC
+    IdP->>BE: Redirect to /api/auth/google/callback?code=XYZ&state=ENCRYPTED_PAYLOAD
 
-    Note over BE: Strict State Validation
-    BE->>BE: Compare req.query.state === req.cookies.oauth_state
+    Note over BE: Strict State Validation & Decryption
+    BE->>BE: Decrypt 'state' parameter -> verifyAndDecodeOAuthState(state)
+    BE->>BE: Compare decrypted payload CSRF against req.cookies.oauth_state
 
     BE->>IdP: Exchange 'code' for Access Token
     IdP-->>BE: Returns IdP Access Token
     BE->>IdP: Fetch User Profile (Email, Name, Avatar)
 
-    BE->>DB: Upsert User by Email
+    BE->>DB: Upsert User by Email (assigning requested role if signup)
     Note over BE: Token Generation
     BE->>BE: Sign short-lived Access Token (JWT)
     BE->>BE: Sign long-lived Refresh Token (JWT)
 
     BE->>BE: Set 'accessToken' & 'refreshToken' HttpOnly Cookies
-    BE-->>FE: Redirect to /dashboard
+    BE-->>FE: Redirect to /dashboard with frontend callback URI
 ```
 
 ### Component Hierarchy & Service Boundaries
@@ -184,12 +185,15 @@ TTL: 900 (15 minutes)
 
 ### REST Endpoints
 
+### Strict Zod Validation Middlewares
+All incoming requests are intercepted by `validateBody(schema)` which leverages strict Zod schemas (`auth.validation.js`). This automatically sanitizes inputs and strips unknown keys, mitigating NoSQL injection risks before the controller executes.
+
 | Method | Endpoint | Auth Level | Purpose | Payload | Response |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/otp/send` | Public | Generates a 6-digit OTP and emails it via SendGrid. | `{ email: "user@example.com" }` | `{ success: true, message: "OTP Sent" }` |
-| `POST` | `/api/auth/otp/verify` | Public | Validates the OTP. If valid, issues HttpOnly cookies. | `{ email: "user@example.com", otp: "123456" }` | `{ user: {...} }` (Cookies attached via headers) |
-| `GET` | `/api/auth/google/url` | Public | Generates the secure OAuth redirect URL. | `None` | `{ url: "https://accounts.google.com/..." }` |
-| `GET` | `/api/auth/google/callback` | Public | Consumes the OAuth code and state. | `?code=XYZ&state=ABC` | Redirects to frontend with Cookies. |
+| `POST` | `/api/auth/otp/send` | Public | Generates a 6-digit OTP and emails it via SendGrid. | `{ email: "user@example.com" }` (Zod validated) | `{ success: true, message: "OTP Sent" }` |
+| `POST` | `/api/auth/otp/verify` | Public | Validates the OTP. If valid, issues HttpOnly cookies. | `{ email: "user@example.com", otp: "123456" }` (Zod validated) | `{ user: {...} }` (Cookies attached via headers) |
+| `GET` | `/api/auth/google/url` | Public | Generates the secure OAuth redirect URL with encoded state. | `?action=signup&role=student` | `{ url: "https://accounts.google.com/..." }` |
+| `GET` | `/api/auth/google/callback` | Public | Consumes the OAuth code and encrypted state. | `?code=XYZ&state=ENCRYPTED` | Redirects to frontend with Cookies. |
 | `POST` | `/api/auth/refresh` | Public | Issues a new Access Token if the Refresh cookie is valid. | `None` | `{ success: true }` |
 | `POST` | `/api/auth/logout` | Auth | Clears all cookies and increments `refreshTokenVersion` in DB. | `None` | `{ success: true }` |
 | `GET` | `/api/auth/me` | Auth | Validates the current Access Token and returns the user payload. | `None` | `{ user: {...} }` |

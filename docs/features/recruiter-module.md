@@ -186,13 +186,15 @@ export const KANBAN_COLUMNS = {
 
 ### REST Endpoints Topography
 
+All mutation endpoints explicitly route through `validateBody(schema)` using shared Zod schemas (e.g., `jobPostingSchema`) to strip undefined properties and rigorously enforce data integrity before hitting the controller.
+
 | HTTP Method | API Endpoint | Responsibility | Security Level | Payload | Response Signature |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/api/recruiter/jobs` | Recruiter | Lists all jobs created by the authenticated recruiter. | `None` | `[{ _id, title, status, metrics }]` |
-| `POST` | `/api/recruiter/jobs` | Recruiter | Creates a new job requisition. | `{ title, company, description, skills, salary }` | `{ success: true, jobId }` |
-| `PATCH` | `/api/recruiter/jobs/:id` | Recruiter | Updates an existing job (e.g., closing a filled role). | `{ status: 'closed' }` | `{ success: true }` |
+| `POST` | `/api/recruiter/jobs` | Recruiter | Creates a new job requisition. | `{ title, company, description, skills, salary }` (Zod validated) | `{ success: true, jobId }` |
+| `PATCH` | `/api/recruiter/jobs/:id` | Recruiter | Updates an existing job (e.g., closing a filled role). | `{ status: 'closed' }` (Zod validated) | `{ success: true }` |
 | `GET` | `/api/recruiter/jobs/:jobId/applicants` | Recruiter | Fetches all applications for the Kanban board. | `None` | `[{ application, candidatePreview }]` |
-| `PATCH` | `/api/recruiter/applications/:id/status` | Recruiter | Moves a candidate between Kanban columns. | `{ status: "interviewing", note: "Optional feedback" }` | `{ success: true, timeline: [...] }` |
+| `PATCH` | `/api/recruiter/applications/:id/status` | Recruiter | Moves a candidate between Kanban columns. | `{ status: "interviewing", note: "Optional feedback" }` (Zod validated) | `{ success: true, timeline: [...] }` |
 | `GET` | `/api/recruiter/analytics` | Recruiter | Aggregates AI/ATS match scores across all jobs. | `None` | `{ matchCategoryDistribution, totalApplicants }` |
 
 ### Websocket Notification Layer (Optional Extension)
