@@ -137,6 +137,7 @@ SkillSphere AI aims to simplify the path from learning to hiring by giving users
 To simplify setup, you can now run the entire project using root-level scripts.
 
 ### Install all dependencies
+
 ```bash
 ### Install all dependencies
 
