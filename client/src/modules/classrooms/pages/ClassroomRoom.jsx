@@ -71,6 +71,8 @@ export default function ClassroomRoom() {
       return;
     }
 
+    let mounted = true;
+
     // Initialize Socket
     const s = io(SOCKET_URL, { auth: { token } });
     setSocket(s);
@@ -80,6 +82,11 @@ export default function ClassroomRoom() {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
+        if (!mounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
         setLocalStream(stream);
         localStreamRef.current = stream;
 
@@ -263,7 +270,7 @@ export default function ClassroomRoom() {
           activeSocketIdsRef.current.delete(socketId);
           const item = peersRef.current.find((p) => p.peerId === socketId);
           if (item) {
-            item.peer.destroy();
+            item.peer?.destroy();
           }
           peersRef.current = peersRef.current.filter(
             (p) => p.peerId !== socketId,
@@ -277,6 +284,7 @@ export default function ClassroomRoom() {
       });
 
     return () => {
+      mounted = false;
       s.disconnect();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((t) => t.stop());
@@ -284,7 +292,7 @@ export default function ClassroomRoom() {
       if (screenStreamRef.current) {
         screenStreamRef.current.getTracks().forEach((t) => t.stop());
       }
-      peersRef.current.forEach((p) => p.peer.destroy());
+      peersRef.current.forEach((p) => p.peer?.destroy());
     };
   }, [roomId, user, token, navigate]);
 
