@@ -16,8 +16,10 @@ function splitSentences(text) {
 }
 
 // Build frequency map of words in the text
+// Build frequency map of words in the text
 function getWordFrequency(text) {
-  const words = text.split(" ");
+  // Split using a regex that handles all whitespace variants (spaces, tabs, newlines) seamlessly
+  const words = text.split(/\s+/).filter(Boolean);
   const freq = {};
 
   words.forEach(word => {
