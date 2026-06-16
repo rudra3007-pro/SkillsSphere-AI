@@ -720,7 +720,7 @@ const TalentFinderPage = () => {
                                           <span className="text-xs font-black text-gray-900 dark:text-slate-200">{matchResult.matchBreakdown?.atsCompatibility || 0}%</span>
                                         </div>
                                         <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 shadow-inner">
-                                          <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${matchResult.matchBreakdown?.atsCompatibility || 0}%` }} />
+                                          <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500 w-[var(--tw-width)]" style={{ '--tw-width': `${matchResult.matchBreakdown?.atsCompatibility || 0}%` }} />
                                         </div>
                                       </div>
 
@@ -730,7 +730,7 @@ const TalentFinderPage = () => {
                                           <span className="text-xs font-black text-gray-900 dark:text-slate-200">{matchResult.matchBreakdown?.skillMatch || 0}%</span>
                                         </div>
                                         <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 shadow-inner">
-                                          <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${matchResult.matchBreakdown?.skillMatch || 0}%` }} />
+                                          <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-500 w-[var(--tw-width)]" style={{ '--tw-width': `${matchResult.matchBreakdown?.skillMatch || 0}%` }} />
                                         </div>
                                       </div>
 
@@ -740,7 +740,7 @@ const TalentFinderPage = () => {
                                           <span className="text-xs font-black text-gray-900 dark:text-slate-200">{matchResult.matchBreakdown?.projectStrength || 0}%</span>
                                         </div>
                                         <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 shadow-inner">
-                                          <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${matchResult.matchBreakdown?.projectStrength || 0}%` }} />
+                                          <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500 w-[var(--tw-width)]" style={{ '--tw-width': `${matchResult.matchBreakdown?.projectStrength || 0}%` }} />
                                         </div>
                                       </div>
 

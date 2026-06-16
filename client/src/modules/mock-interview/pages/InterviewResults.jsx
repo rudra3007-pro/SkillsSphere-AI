@@ -255,7 +255,7 @@ const InterviewResults = () => {
           </span>
           {results.duration && (
             <span className="py-1 px-3 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400">
-              <Clock size={12} style={{ display: "inline", marginRight: 4 }} />
+              <Clock size={12} className="inline-block mr-1" />
               {results.duration}s
             </span>
           )}
@@ -284,7 +284,7 @@ const InterviewResults = () => {
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
-              style={{ transition: "stroke-dashoffset 1s ease" }}
+              className="transition-[stroke-dashoffset] duration-1000 ease-in-out"
             />
           </svg>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-extrabold bg-gradient-to-br from-indigo-500 to-purple-500 bg-clip-text text-transparent">{overallScore}</div>
@@ -316,7 +316,7 @@ const InterviewResults = () => {
           Soft Skills & Delivery
         </h3>
         <div className="flex flex-col gap-8 items-center">
-          <div className="w-full max-w-[500px]" style={{ height: 300 }}>
+          <div className="w-full max-w-[500px] h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.1)" />
@@ -383,8 +383,8 @@ const InterviewResults = () => {
               </span>
             )}
             <span
-              className="font-bold text-lg"
-              style={{ color: getScoreColor(a.scores?.technical || 0) }}
+              className="font-bold text-lg text-[color:var(--tw-score-color)]"
+              style={{ '--tw-score-color': getScoreColor(a.scores?.technical || 0) }}
             >
               {a.scores?.technical || 0}%
             </span>
