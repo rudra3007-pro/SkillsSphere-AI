@@ -77,8 +77,13 @@ const GENERIC_PHRASES = [
 ];
 
 // Detect usage of generic phrases
+// Detect usage of generic phrases using strict word boundaries to avoid substring false positives
 function detectGeneric(text) {
-  return GENERIC_PHRASES.filter(phrase => text.includes(phrase));
+  return GENERIC_PHRASES.filter(phrase => {
+    // Escapes any spaces inside the phrase and enforces word boundaries (\b) on both ends
+    const regex = new RegExp(`\\b${phrase}\\b`, "i");
+    return regex.test(text);
+  });
 }
 
 // Main evaluator function
