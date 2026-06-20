@@ -93,7 +93,13 @@ export const getNotificationById = async (notificationId, userId) => {
     throw new AppError("Notification not found", 404);
   }
 
+  const notificationUserId = notification.userId?._id || notification.userId;
+  if (!notificationUserId) {
+    throw new AppError("Notification owner not found", 404);
+  }
+
   // Verify ownership
+  if (notificationUserId.toString() !== userId) {
   if (!notification.userId || notification.userId._id.toString() !== userId) {
     throw new AppError("Not authorized to access this notification", 403);
   }
